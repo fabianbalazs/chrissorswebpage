@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrissors - Fodrászat & Borbély</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="logo png.webp">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+</head>
+<body>
+
+    <header>
+        <img src="logo png.webp" alt="logo" class="logo" onclick="window.location.href='index.html'">
+        
+        <div class="hamburger" onclick="app.toggleDrawer()">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </div>
+    </header>
+
+    <div id="side-drawer-overlay" class="drawer-overlay hidden" onclick="app.toggleDrawer()"></div>
+    <div id="side-drawer" class="side-drawer">
+        <div class="drawer-header">
+            <h3 style="color:var(--primary); margin:0;">Menü</h3>
+            <button class="close-drawer" onclick="app.toggleDrawer()">&times;</button>
+        </div>
+
+        <div id="drawer-user-section">
+            <div id="drawer-user-info" style="margin-bottom: 20px; color: white; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                <p style="color:#888; font-style:italic;">Nincs bejelentkezett felhasználó.</p>
+            </div>
+            
+            <h4 style="color:var(--text-gray); margin-bottom:15px; font-size: 0.9rem;">Foglalt időpontjaim</h4>
+            <div id="drawer-appointments-list">
+                </div>
+        </div>
+
+        <div class="drawer-footer-links">
+            <a href="arak.html" target="_blank" class="drawer-link">
+                Árlista
+            </a>
+            <a href="https://www.instagram.com/itschrissors?igsh=MTEzMHhleDFzcGVybg==" class="drawer-link">
+                Instagram
+            </a>
+            
+            
+            <div id="drawer-logout-btn" class="drawer-link hidden" style="color: var(--danger);" onclick="app.logoutUser(); app.toggleDrawer()">
+                Kijelentkezés
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div id="view-home">
+        <div class="hero">
+            <img src="logo png.webp" alt="logo" class="logo2">
+            <p style="font-weight: bold; font-size: 21px;">Prémium hajvágás Krisztiántól.</p>
+            
+            <div id="auth-buttons">
+                <p style="margin-top:-15px; margin-bottom:30px; color:#ccc; font-size: 12px;">Az időpontfoglalás regisztrációhoz kötött.</p>
+                <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                    <button class="btn" onclick="app.showUserLogin()">Már van fiókom</button>
+                    <button class="btn btn-outline" onclick="app.showRegister()">Előregisztráció</button>
+                </div>
+            </div>
+
+            <button id="btn-go-booking" class="btn hidden" onclick="document.getElementById('booking-section').scrollIntoView({behavior: 'smooth'})">
+                Ugrás az időpontokhoz
+            </button>
+        </div>
+
+        <div class="intro-section" id="intor-section-wrapper">
+            <h2 class="section-title" style="margin-bottom: 15px;">Több, mint egy hajvágás</h2>
+            <p class="intro-text">
+                Minden frizura egyedi, ahogy minden vendég is. A <b class="cb">Chrissors</b>-nál a maximális precizitásra, a részletekre és a prémium minőségre törekszem. Célom, hogy a székből felállva a legjobb formádat hozd. Nézd meg a legutóbbi munkáimat!
+            </p>
+        </div>
+
+
+
+        <div class="gallery-ribbon-container">
+            <div class="gallery-track">
+                <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1">
+                <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2">
+                <img src="kepek/kep3.webp" alt="Chrissors hajvágás 3">
+                <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4">
+                <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5">
+                <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6">
+                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7">
+                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8">
+                <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9">
+                <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10">
+                <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11">
+                <img src="kepek/kep12.webp" alt="Chrissors hajvágás 12">
+                <img src="kepek/kep13.webp" alt="Chrissors hajvágás 13">
+                <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14">
+                <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15">
+                <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16">
+                <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1">
+                <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2">
+                <img src="kepek/kep3.webp" alt="Chrissors hajvágás 3">
+                <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4">
+                <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5">
+                <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6">
+                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7">
+                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8">
+                <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9">
+                <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10">
+                <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11">
+                <img src="kepek/kep12.webp" alt="Chrissors hajvágás 12">
+                <img src="kepek/kep13.webp" alt="Chrissors hajvágás 13">
+                <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14">
+                <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15">
+                <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16">
+            </div>
+        </div>
+
+        <div id="reviews-section-wrapper" class="reviews-section" style="display: none;">
+            <h2 class="section-title">Ti mondtátok...</h2>
+            <p class="intro-text-alt">
+                Minden visszajelzés fontos számomra. Köszönöm nektek a bizalmat!
+            </p>
+            <div id="public-reviews-container" class="reviews-track">
+                </div>
+
+            <div class="reviews-nav">
+                <button class="nav-btn prev" onclick="app.scrollReviews(-1)">&#10094;</button>
+                <button class="nav-btn next" onclick="app.scrollReviews(1)">&#10095;</button>
+            </div>
+        </div>
+
+        <div id="booking-section" class="container hidden">
+            <h2 class="section-title2">Válassz helyszínt és időpontot</h2>
+            
+            <div class="location-selector">
+                <button class="loc-btn active" onclick="app.selectLocation('Fehérgyarmat')" id="btn-fehergyarmat">Fehérgyarmat</button>
+                <button class="loc-btn" onclick="app.selectLocation('Debrecen')" id="btn-debrecen">Debrecen</button>
+            </div>
+
+            <div id="slots-container" class="calendar-grid">
+                <p style="text-align:center; width:100%; color:#666;">Adatok betöltése...</p>
+            </div>
+            <p id="no-slots-msg" class="no-slots-text">Jelenleg nincs szabad időpont ehhez a helyszínhez.</p>
+        </div>
+    </div>
+
+    <div id="view-review-form" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Értékelés</h2>
+            <p class="booking-subtitle">Kérlek oszd meg a tapasztalataidat!</p>
+            
+            <div class="form-group" style="text-align: center;">
+                <label>Hány csillagot adnál?</label>
+                <div id="user-stars" class="star-rating-input">
+                    <span class="star" onclick="app.setRating(1)">☆</span>
+                    <span class="star" onclick="app.setRating(2)">☆</span>
+                    <span class="star" onclick="app.setRating(3)">☆</span>
+                    <span class="star" onclick="app.setRating(4)">☆</span>
+                    <span class="star" onclick="app.setRating(5)">☆</span>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Szöveges vélemény</label>
+                <textarea id="review-text" placeholder="Pl. Nagyon profi munka, csak ajánlani tudom..."></textarea>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" style="flex:1" onclick="app.showHome()">Mégsem</button>
+                <button class="btn" style="flex:2" onclick="app.submitReview()">Értékelés küldése</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-admin-edit-review" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Vélemény szerkesztése</h2>
+            <p class="booking-subtitle">Itt javíthatod a helyesírási hibákat jóváhagyás előtt.</p>
+            
+            <div class="form-group">
+                <label>Szöveg</label>
+                <textarea id="admin-review-text"></textarea>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" style="flex:1" onclick="app.cancelAdminEditReview()">Mégsem</button>
+                <button class="btn" style="flex:2" onclick="app.saveAndApproveReview()">Mentés és Elfogadás</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-register" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Előregisztráció</h2>
+            <p class="booking-subtitle">Add meg adataidat a hozzáférés igényléséhez.</p>
+            
+            <div class="form-group">
+                <label>Teljes Név</label>
+                <input type="text" id="reg-name" placeholder="Pl. Kovács Péter">
+            </div>
+            <div class="form-group">
+                <label>Telefonszám</label>
+                <input type="tel" id="reg-phone" placeholder="Pl. 06701234567">
+            </div>
+            <div class="form-group">
+                <label>Instagram Név (ha nincs, adj meg felhasználó nevet)</label>
+                <input type="text" id="reg-insta" placeholder="Pl. kovacspeter">
+            </div>
+            <div class="form-group">
+                <label>Jelszó</label>
+                <input type="password" id="reg-pass" placeholder="Jelszó megadása">
+            </div>
+            <div class="form-group">
+                <label style="font-size: 0.8rem; display: flex; gap: 10px; align-items: start; cursor: pointer;">
+                    <input type="checkbox" id="reg-gdpr" style="width: 20px; height: 20px; accent-color: var(--primary);">
+                    <span style="margin-top: 2px;">Elolvastam és elfogadom az <a href="adatkezeles.html" target="_blank" style="text-decoration: underline; color: var(--primary);">Adatkezelési Tájékoztatót </a> és az <a href="aszf.html" target="_blank" style="text-decoration: underline; color: var(--primary);">ÁSZF-et.</a>.</span>
+                </label>
+            </div>
+            
+            <button class="btn" style="width:100%" onclick="app.submitRegistration()">Regisztráció Küldése</button>
+            <p class="back-link" onclick="app.showHome()">Vissza</p>
+        </div>
+    </div>
+
+    <div id="view-user-login" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Belépés</h2>
+            <p class="booking-subtitle">Add meg a regisztrált adataidat.</p>
+            
+            <div class="form-group">
+                <label>Teljes Név</label>
+                <input type="text" id="login-name" placeholder="Teljes Név">
+            </div>
+            <div class="form-group">
+                <label>Jelszó</label>
+                <input type="password" id="login-pass" placeholder="Jelszó">
+            </div>
+            
+            <button class="btn" style="width:100%" onclick="app.userLogin()">Belépés</button>
+            <p class="back-link" onclick="app.showHome()">Vissza</p>
+        </div>
+    </div>
+
+    <div id="view-booking-form" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Foglalás Véglegesítése</h2>
+            <p class="booking-subtitle" id="booking-details-display">...</p>
+            
+            <div class="form-group">
+                <label>Telefonszám</label>
+                <input type="tel" id="client-phone" placeholder="Pl. 06701234567">
+            </div>
+            <div class="form-group">
+                <label>Email cím</label>
+                <input type="tel" id="client-email" placeholder="Pl. gipszjakab@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>Milyen hajat szeretnél vágatni?</label>
+                <textarea id="client-note" placeholder="Pl. Csak átmenet | Fade + felülről | Low taper fade + hossz"></textarea>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" style="flex:1" onclick="app.showHome()">Mégsem</button>
+                <button class="btn" style="flex:2" onclick="app.submitBooking()">Foglalás megerősítése</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-login" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Admin Belépés</h2>
+            <div class="form-group">
+                <label>Felhasználónév</label>
+                <input type="text" id="admin-user" placeholder="Felhasználónév">
+            </div>
+            <div class="form-group">
+                <label>Jelszó</label>
+                <input type="password" id="admin-pass" placeholder="Jelszó">
+            </div>
+            <button class="btn" style="width:100%" onclick="app.login()">Belépés</button>
+            <p class="back-link" onclick="app.showHome()">Vissza a főoldalra</p>
+        </div>
+    </div>
+
+    <div id="view-dashboard" class="hidden">
+        <div class="container">
+            <div class="admin-header">
+                <h2 style="color:white;">Adminisztráció</h2>
+                <button class="btn btn-outline" onclick="app.logout()">Kilépés</button>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="tab-btn active" id="tab-manage" onclick="app.switchAdminTab('manage')">Időpontok</button>
+                <button class="tab-btn" id="tab-bookings" onclick="app.switchAdminTab('bookings')">Foglalások</button>
+                <button class="tab-btn" id="tab-pending" onclick="app.switchAdminTab('pending')">Jelentkezések</button>
+                <button class="tab-btn" id="tab-users" onclick="app.switchAdminTab('users')">Vendégek</button>
+                <button class="tab-btn" id="tab-reviews" onclick="app.switchAdminTab('reviews')">Vélemények</button>
+            </div>
+
+            <div id="admin-section-manage">
+                <div class="dashboard-box">
+                    <h3 class="box-header">Új időpont hirdetése</h3>
+                    <div class="add-slot-grid">
+                        <select id="new-loc">
+                            <option value="Fehérgyarmat">Fehérgyarmat</option>
+                            <option value="Debrecen">Debrecen</option>
+                        </select>
+                        <input type="date" id="new-date">
+                        <input type="time" id="new-time">
+                        <button class="btn" onclick="app.addSlot()">Hozzáadás</button>
+                    </div>
+                </div>
+                <h3 style="margin-bottom:10px;">Aktív időpontok</h3>
+                <button class="accordion-btn" onclick="app.toggleAccordion('manage-feher')">Fehérgyarmat <span class="count-badge" id="count-manage-feher">0</span></button>
+                <div id="manage-feher" class="accordion-content"><div id="list-manage-feher" class="dashboard-list"></div></div>
+                <button class="accordion-btn" onclick="app.toggleAccordion('manage-debrecen')">Debrecen <span class="count-badge" id="count-manage-debrecen">0</span></button>
+                <div id="manage-debrecen" class="accordion-content"><div id="list-manage-debrecen" class="dashboard-list"></div></div>
+            </div>
+
+            <div id="admin-section-bookings" class="hidden">
+                <div class="calendar-layout">
+                    <div class="calendar-wrapper">
+                        <div class="calendar-header">
+                            <button class="btn-outline" onclick="app.changeMonth(-1)">&#10094;</button>
+                            <h3 id="calendar-month-label" style="color:var(--primary); min-width: 150px; text-align:center;"></h3>
+                            <button class="btn-outline" onclick="app.changeMonth(1)">&#10095;</button>
+                        </div>
+                        <div class="calendar-weekdays">
+                            <div>H</div><div>K</div><div>Sz</div><div>Cs</div><div>P</div><div>Sz</div><div>V</div>
+                        </div>
+                        <div id="admin-calendar-grid" class="calendar-days-grid"></div>
+                    </div>
+
+                    <div id="calendar-day-details" class="details-sidebar hidden">
+                        <h3 id="selected-date-label" style="text-align:center; color:white; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;"></h3>
+                        
+                        <div class="split-view-container">
+                            <div class="split-column">
+                                <h4 style="color:var(--primary); text-align:center; margin-bottom:10px; border-bottom:1px solid var(--primary); padding-bottom:5px;">Fehérgyarmat</h4>
+                                <div id="day-list-feher" class="dashboard-list"></div>
+                            </div>
+                            
+                            <div class="split-column">
+                                <h4 style="color:var(--primary); text-align:center; margin-bottom:10px; border-bottom:1px solid var(--primary); padding-bottom:5px;">Debrecen</h4>
+                                <div id="day-list-debrecen" class="dashboard-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="admin-section-pending" class="hidden">
+                <h3 style="margin-bottom:10px; color:var(--primary);">Jóváhagyásra váró regisztrációk</h3>
+                <div id="list-pending-users" class="dashboard-list"></div>
+            </div>
+
+            <div id="admin-section-users" class="hidden">
+                <h3 style="margin-bottom:10px; color:var(--success);">
+                    Aktív, elfogadott vendégek 
+                    <span class="count-badge" id="count-approved-users" style="background-color: rgba(255,255,255,0.75); color:#121212; margin-left:10px; border-radius: 6px;">0</span>
+                </h3>
+                <div id="list-approved-users" class="dashboard-list"></div>
+            </div>
+
+            <div id="admin-section-reviews" class="hidden">
+                <h3 style="margin-bottom:10px; color:var(--primary);">Beérkezett vélemények</h3>
+                <div id="list-pending-reviews" class="dashboard-list"></div>
+                
+                <h3 style="margin-bottom:10px; color:var(--success);">Elfogadott vélemények</h3>
+                <div id="list-approved-reviews" class="dashboard-list"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="view-modify-booking" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Foglalás Módosítása</h2>
+            
+            <div class="form-group">
+                <label>Dátum</label>
+                <input type="date" id="mod-date">
+            </div>
+            <div class="form-group">
+                <label>Időpont</label>
+                <input type="time" id="mod-time">
+            </div>
+            <div class="form-group">
+                <label>Üzenet / Megjegyzés</label>
+                <textarea id="mod-note"></textarea>
+            </div>
+            
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" style="flex:1" onclick="app.cancelModification()">Mégsem</button>
+                <button class="btn" style="flex:2" onclick="app.submitModification()">Mentés</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-left">
+                <span class="footer-logo">Chrissors'</span>
+                <p class="footer-desc">Prémium minőség, stílus és elegancia.</p>
+                <div style="margin-top: 5px; font-size: 0.8rem;">
+                    <a href="impresszum.html" class="social-link">Impresszum</a> | 
+                    <a href="adatkezeles.html" class="social-link">Adatkezelés</a> | 
+                    <a href="aszf.html" class="social-link">ÁSZF</a> 
+                </div>
+            </div>
+            <div class="footer-center">
+                <p>&copy; 2026 Chrissors'. Minden jog fenntartva.</p>
+            </div>
+            <div class="footer-right"></div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script> 
+</body>
+</html>
