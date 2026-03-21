@@ -14,7 +14,7 @@
 
     <header>
         <img src="logo png.webp" alt="logo" class="logo" onclick="window.location.href='index.html'">
-        
+
         <div class="hamburger" onclick="app.toggleDrawer()">
             <div class="bar"></div>
             <div class="bar"></div>
@@ -33,7 +33,7 @@
             <div id="drawer-user-info" style="margin-bottom: 20px; color: white; border-bottom: 1px solid #333; padding-bottom: 10px;">
                 <p style="color:#888; font-style:italic;">Nincs bejelentkezett felhasználó.</p>
             </div>
-            
+
             <h4 style="color:var(--text-gray); margin-bottom:15px; font-size: 0.9rem;">Foglalt időpontjaim</h4>
             <div id="drawer-appointments-list">
                 </div>
@@ -46,8 +46,8 @@
             <a href="https://www.instagram.com/itschrissors?igsh=MTEzMHhleDFzcGVybg==" class="drawer-link">
                 Instagram
             </a>
-            
-            
+
+
             <div id="drawer-logout-btn" class="drawer-link hidden" style="color: var(--danger);" onclick="app.logoutUser(); app.toggleDrawer()">
                 Kijelentkezés
             </div>
@@ -56,11 +56,23 @@
 
     <div id="toast-container"></div>
 
+    <div id="review-popup-overlay" class="review-popup-overlay hidden" onclick="app.closeReviewPopup()">
+        <div class="review-popup" onclick="event.stopPropagation()">
+            <div class="review-popup-icon">★</div>
+            <h3 class="review-popup-title">Hogy sikerült?</h3>
+            <p class="review-popup-text">Volt egy időpontod nálunk! Örülnénk, ha megosztanád a tapasztalataidat – pár másodperc az egész.</p>
+            <div class="review-popup-btns">
+                <button class="btn" onclick="app.acceptReviewPopup()">Értékelést írok</button>
+                <button class="btn-outline" onclick="app.closeReviewPopup()">Később</button>
+            </div>
+        </div>
+    </div>
+
     <div id="view-home">
         <div class="hero">
             <img src="logo png.webp" alt="logo" class="logo2">
             <p style="font-weight: bold; font-size: 21px;">Prémium hajvágás Krisztiántól.</p>
-            
+
             <div id="auth-buttons">
                 <p style="margin-top:-15px; margin-bottom:30px; color:#ccc; font-size: 12px;">Az időpontfoglalás regisztrációhoz kötött.</p>
                 <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
@@ -74,6 +86,63 @@
             </button>
         </div>
 
+        <div class="how-section" id="how-section">
+            <div class="how-inner">
+                <div class="how-step" data-step="1">
+                    <div class="how-icon-wrap">
+                        <svg class="how-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="24" cy="24" r="22" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+                            <path d="M24 14v10l6 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <circle cx="24" cy="24" r="3" fill="currentColor"/>
+                        </svg>
+                        <div class="how-step-num">01</div>
+                    </div>
+                    <h3 class="how-step-title">Regisztrálj</h3>
+                    <p class="how-step-desc">Töltsd ki az előregisztrációs űrlapot. Krisztián személyesen hagyja jóvá a hozzáférést.</p>
+                </div>
+
+                <div class="how-connector">
+                    <div class="how-line"></div>
+                    <svg class="how-arrow" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <div class="how-step" data-step="2">
+                    <div class="how-icon-wrap">
+                        <svg class="how-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="8" y="10" width="32" height="30" rx="3" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M8 18h32" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M16 10V6M32 10V6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M15 27l5 5 13-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="how-step-num">02</div>
+                    </div>
+                    <h3 class="how-step-title">Foglalj időpontot</h3>
+                    <p class="how-step-desc">Belépés után válassz helyszínt – Fehérgyarmat vagy Debrecen – majd kattints a neked megfelelő időpontra.</p>
+                </div>
+
+                <div class="how-connector">
+                    <div class="how-line"></div>
+                    <svg class="how-arrow" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+
+                <div class="how-step" data-step="3">
+                    <div class="how-icon-wrap">
+                        <svg class="how-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M24 6C14 6 6 14 6 24s8 18 18 18 18-8 18-18S34 6 24 6z" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M17 24l5 5 9-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="how-step-num">03</div>
+                    </div>
+                    <h3 class="how-step-title">Gyere le, és élvezd</h3>
+                    <p class="how-step-desc">Jelenj meg a választott időpontban. A többi Krisztián dolga – te csak dőlj hátra.</p>
+                </div>
+            </div>
+        </div>
+
         <div class="intro-section" id="intor-section-wrapper">
             <h2 class="section-title" style="margin-bottom: 15px;">Több, mint egy hajvágás</h2>
             <p class="intro-text">
@@ -81,42 +150,71 @@
             </p>
         </div>
 
+        <div class="gallery-ribbon-container" id="gallery-ribbon">
+            <div class="gallery-track" id="gallery-track">
+                <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1" data-index="0">
+                <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2" data-index="1">
+                <img src="kepek/kep3.webp" alt="Chrissors hajvágás 3" data-index="2">
+                <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4" data-index="3">
+                <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5" data-index="4">
+                <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6" data-index="5">
+                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7" data-index="6">
+                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8" data-index="7">
+                <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9" data-index="8">
+                <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10" data-index="9">
+                <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11" data-index="10">
+                <img src="kepek/kep12.webp" alt="Chrissors hajvágás 12" data-index="11">
+                <img src="kepek/kep13.webp" alt="Chrissors hajvágás 13" data-index="12">
+                <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14" data-index="13">
+                <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15" data-index="14">
+                <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16" data-index="15">
+                <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1" data-index="0" aria-hidden="true">
+                <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2" data-index="1" aria-hidden="true">
+                <img src="kepek/kep3.webp" alt="Chrissors hajvágás 3" data-index="2" aria-hidden="true">
+                <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4" data-index="3" aria-hidden="true">
+                <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5" data-index="4" aria-hidden="true">
+                <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6" data-index="5" aria-hidden="true">
+                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7" data-index="6" aria-hidden="true">
+                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8" data-index="7" aria-hidden="true">
+                <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9" data-index="8" aria-hidden="true">
+                <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10" data-index="9" aria-hidden="true">
+                <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11" data-index="10" aria-hidden="true">
+                <img src="kepek/kep12.webp" alt="Chrissors hajvágás 12" data-index="11" aria-hidden="true">
+                <img src="kepek/kep13.webp" alt="Chrissors hajvágás 13" data-index="12" aria-hidden="true">
+                <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14" data-index="13" aria-hidden="true">
+                <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15" data-index="14" aria-hidden="true">
+                <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16" data-index="15" aria-hidden="true">
+            </div>
+        </div>
 
 
-        <div class="gallery-ribbon-container">
-            <div class="gallery-track">
-                <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1">
-                <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2">
-                <img src="kepek/kep3.webp" alt="Chrissors hajvágás 3">
-                <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4">
-                <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5">
-                <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6">
-                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7">
-                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8">
-                <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9">
-                <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10">
-                <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11">
-                <img src="kepek/kep12.webp" alt="Chrissors hajvágás 12">
-                <img src="kepek/kep13.webp" alt="Chrissors hajvágás 13">
-                <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14">
-                <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15">
-                <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16">
-                <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1">
-                <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2">
-                <img src="kepek/kep3.webp" alt="Chrissors hajvágás 3">
-                <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4">
-                <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5">
-                <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6">
-                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7">
-                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8">
-                <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9">
-                <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10">
-                <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11">
-                <img src="kepek/kep12.webp" alt="Chrissors hajvágás 12">
-                <img src="kepek/kep13.webp" alt="Chrissors hajvágás 13">
-                <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14">
-                <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15">
-                <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16">
+        <div id="lightbox" class="lightbox hidden" onclick="closeLightbox(event)">
+            <button class="lightbox-close" onclick="closeLightboxBtn()">&times;</button>
+            <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)">&#10094;</button>
+            <div class="lightbox-content">
+                <img id="lightbox-img" src="" alt="">
+                <div class="lightbox-counter"><span id="lightbox-cur">1</span> / <span id="lightbox-total">16</span></div>
+            </div>
+            <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">&#10095;</button>
+        </div>
+
+
+        <div class="stats-section" id="stats-section">
+            <div class="stats-inner">
+                <div class="stat-item">
+                    <span class="stat-num" data-target="100" data-suffix="%">0%</span>
+                    <span class="stat-label">Elégedettség</span>
+                </div>
+                <div class="stat-sep"></div>
+                <div class="stat-item">
+                    <span class="stat-num" data-target="2" data-suffix="+ év">0</span>
+                    <span class="stat-label">Tapasztalat</span>
+                </div>
+                <div class="stat-sep"></div>
+                <div class="stat-item">
+                    <span class="stat-num" data-target="500" data-suffix="+">0</span>
+                    <span class="stat-label">Hajvágás</span>
+                </div>
             </div>
         </div>
 
@@ -126,17 +224,28 @@
                 Minden visszajelzés fontos számomra. Köszönöm nektek a bizalmat!
             </p>
             <div id="public-reviews-container" class="reviews-track">
-                </div>
+            </div>
+            <div id="reviews-empty-placeholder" class="reviews-empty hidden">
+                <div class="reviews-empty-icon">✂</div>
+                <p>Hamarosan itt lesznek az első vélemények.<br>Legyél te az első, aki értékeli!</p>
+            </div>
 
             <div class="reviews-nav">
                 <button class="nav-btn prev" onclick="app.scrollReviews(-1)">&#10094;</button>
                 <button class="nav-btn next" onclick="app.scrollReviews(1)">&#10095;</button>
             </div>
+
+            <div class="gallery-insta-cta">
+                <a href="https://www.instagram.com/itschrissors?igsh=MTEzMHhleDFzcGVybg==" target="_blank" class="insta-cta-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+                    Kövess Instagramon
+                </a>
+            </div>
         </div>
 
         <div id="booking-section" class="container hidden">
             <h2 class="section-title2">Válassz helyszínt és időpontot</h2>
-            
+
             <div class="location-selector">
                 <button class="loc-btn active" onclick="app.selectLocation('Fehérgyarmat')" id="btn-fehergyarmat">Fehérgyarmat</button>
                 <button class="loc-btn" onclick="app.selectLocation('Debrecen')" id="btn-debrecen">Debrecen</button>
@@ -153,7 +262,7 @@
         <div class="form-box">
             <h2 class="box-title">Értékelés</h2>
             <p class="booking-subtitle">Kérlek oszd meg a tapasztalataidat!</p>
-            
+
             <div class="form-group" style="text-align: center;">
                 <label>Hány csillagot adnál?</label>
                 <div id="user-stars" class="star-rating-input">
@@ -168,7 +277,7 @@
                 <label>Szöveges vélemény</label>
                 <textarea id="review-text" placeholder="Pl. Nagyon profi munka, csak ajánlani tudom..."></textarea>
             </div>
-            
+
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-outline" style="flex:1" onclick="app.showHome()">Mégsem</button>
                 <button class="btn" style="flex:2" onclick="app.submitReview()">Értékelés küldése</button>
@@ -180,12 +289,12 @@
         <div class="form-box">
             <h2 class="box-title">Vélemény szerkesztése</h2>
             <p class="booking-subtitle">Itt javíthatod a helyesírási hibákat jóváhagyás előtt.</p>
-            
+
             <div class="form-group">
                 <label>Szöveg</label>
                 <textarea id="admin-review-text"></textarea>
             </div>
-            
+
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-outline" style="flex:1" onclick="app.cancelAdminEditReview()">Mégsem</button>
                 <button class="btn" style="flex:2" onclick="app.saveAndApproveReview()">Mentés és Elfogadás</button>
@@ -197,7 +306,7 @@
         <div class="form-box">
             <h2 class="box-title">Előregisztráció</h2>
             <p class="booking-subtitle">Add meg adataidat a hozzáférés igényléséhez.</p>
-            
+
             <div class="form-group">
                 <label>Teljes Név</label>
                 <input type="text" id="reg-name" placeholder="Pl. Kovács Péter">
@@ -220,7 +329,7 @@
                     <span style="margin-top: 2px;">Elolvastam és elfogadom az <a href="adatkezeles.html" target="_blank" style="text-decoration: underline; color: var(--primary);">Adatkezelési Tájékoztatót </a> és az <a href="aszf.html" target="_blank" style="text-decoration: underline; color: var(--primary);">ÁSZF-et.</a>.</span>
                 </label>
             </div>
-            
+
             <button class="btn" style="width:100%" onclick="app.submitRegistration()">Regisztráció Küldése</button>
             <p class="back-link" onclick="app.showHome()">Vissza</p>
         </div>
@@ -230,7 +339,7 @@
         <div class="form-box">
             <h2 class="box-title">Belépés</h2>
             <p class="booking-subtitle">Add meg a regisztrált adataidat.</p>
-            
+
             <div class="form-group">
                 <label>Teljes Név</label>
                 <input type="text" id="login-name" placeholder="Teljes Név">
@@ -239,7 +348,7 @@
                 <label>Jelszó</label>
                 <input type="password" id="login-pass" placeholder="Jelszó">
             </div>
-            
+
             <button class="btn" style="width:100%" onclick="app.userLogin()">Belépés</button>
             <p class="back-link" onclick="app.showHome()">Vissza</p>
         </div>
@@ -249,7 +358,7 @@
         <div class="form-box">
             <h2 class="box-title">Foglalás Véglegesítése</h2>
             <p class="booking-subtitle" id="booking-details-display">...</p>
-            
+
             <div class="form-group">
                 <label>Telefonszám</label>
                 <input type="tel" id="client-phone" placeholder="Pl. 06701234567">
@@ -262,7 +371,7 @@
                 <label>Milyen hajat szeretnél vágatni?</label>
                 <textarea id="client-note" placeholder="Pl. Csak átmenet | Fade + felülről | Low taper fade + hossz"></textarea>
             </div>
-            
+
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-outline" style="flex:1" onclick="app.showHome()">Mégsem</button>
                 <button class="btn" style="flex:2" onclick="app.submitBooking()">Foglalás megerősítése</button>
@@ -337,13 +446,13 @@
 
                     <div id="calendar-day-details" class="details-sidebar hidden">
                         <h3 id="selected-date-label" style="text-align:center; color:white; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;"></h3>
-                        
+
                         <div class="split-view-container">
                             <div class="split-column">
                                 <h4 style="color:var(--primary); text-align:center; margin-bottom:10px; border-bottom:1px solid var(--primary); padding-bottom:5px;">Fehérgyarmat</h4>
                                 <div id="day-list-feher" class="dashboard-list"></div>
                             </div>
-                            
+
                             <div class="split-column">
                                 <h4 style="color:var(--primary); text-align:center; margin-bottom:10px; border-bottom:1px solid var(--primary); padding-bottom:5px;">Debrecen</h4>
                                 <div id="day-list-debrecen" class="dashboard-list"></div>
@@ -360,7 +469,7 @@
 
             <div id="admin-section-users" class="hidden">
                 <h3 style="margin-bottom:10px; color:var(--success);">
-                    Aktív, elfogadott vendégek 
+                    Aktív, elfogadott vendégek
                     <span class="count-badge" id="count-approved-users" style="background-color: rgba(255,255,255,0.75); color:#121212; margin-left:10px; border-radius: 6px;">0</span>
                 </h3>
                 <div id="list-approved-users" class="dashboard-list"></div>
@@ -369,7 +478,7 @@
             <div id="admin-section-reviews" class="hidden">
                 <h3 style="margin-bottom:10px; color:var(--primary);">Beérkezett vélemények</h3>
                 <div id="list-pending-reviews" class="dashboard-list"></div>
-                
+
                 <h3 style="margin-bottom:10px; color:var(--success);">Elfogadott vélemények</h3>
                 <div id="list-approved-reviews" class="dashboard-list"></div>
             </div>
@@ -380,7 +489,7 @@
     <div id="view-modify-booking" class="hidden">
         <div class="form-box">
             <h2 class="box-title">Foglalás Módosítása</h2>
-            
+
             <div class="form-group">
                 <label>Dátum</label>
                 <input type="date" id="mod-date">
@@ -393,7 +502,7 @@
                 <label>Üzenet / Megjegyzés</label>
                 <textarea id="mod-note"></textarea>
             </div>
-            
+
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-outline" style="flex:1" onclick="app.cancelModification()">Mégsem</button>
                 <button class="btn" style="flex:2" onclick="app.submitModification()">Mentés</button>
@@ -407,9 +516,9 @@
                 <span class="footer-logo">Chrissors'</span>
                 <p class="footer-desc">Prémium minőség, stílus és elegancia.</p>
                 <div style="margin-top: 5px; font-size: 0.8rem;">
-                    <a href="impresszum.html" class="social-link">Impresszum</a> | 
-                    <a href="adatkezeles.html" class="social-link">Adatkezelés</a> | 
-                    <a href="aszf.html" class="social-link">ÁSZF</a> 
+                    <a href="impresszum.html" class="social-link">Impresszum</a> |
+                    <a href="adatkezeles.html" class="social-link">Adatkezelés</a> |
+                    <a href="aszf.html" class="social-link">ÁSZF</a>
                 </div>
             </div>
             <div class="footer-center">
@@ -419,6 +528,141 @@
         </div>
     </footer>
 
-    <script src="script.js"></script> 
+        <script src="script.js"></script>
+    <script>
+
+
+
+    (function () {
+
+
+        if (!('IntersectionObserver' in window)) {
+            document.querySelectorAll('.reveal, .form-box, .time-slot').forEach(function(el) {
+                el.classList.add('visible');
+            });
+            return;
+        }
+
+
+        var revealObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12 });
+
+
+        var revealSelectors = [
+            '.logo2', '.hero p', '#auth-buttons', '#btn-go-booking',
+            '.stat-item',
+            '.intro-section', '.intro-section h2', '.intro-section p',
+            '.gallery-ribbon-container',
+            '.reviews-section', '.reviews-section h2', '.review-card',
+            '#booking-section h2', '.location-selector', '.day-group',
+            'footer',
+            '.form-box',
+            '.dashboard-box', '.accordion-btn', '.dashboard-item',
+        ];
+
+        revealSelectors.forEach(function(sel) {
+            document.querySelectorAll(sel).forEach(function(el) {
+                el.classList.add('reveal');
+                revealObserver.observe(el);
+            });
+        });
+
+
+        var slotObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.time-slot').forEach(function(slot, i) {
+                        setTimeout(function() { slot.classList.add('visible'); }, i * 60);
+                    });
+                    slotObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.day-group, .calendar-grid').forEach(function(el) {
+            slotObserver.observe(el);
+        });
+
+
+        ['.logo2', '.hero p', '#auth-buttons', '#btn-go-booking'].forEach(function(sel, i) {
+            var el = document.querySelector(sel);
+            if (el) setTimeout(function() { el.classList.add('visible'); }, 100 + i * 180);
+        });
+
+
+        var easeOut = function(t) { return 1 - Math.pow(1 - t, 3); };
+
+        function animateCounter(el) {
+            var target = parseInt(el.dataset.target, 10);
+            var suffix = el.dataset.suffix || '';
+            var duration = target >= 100 ? 1800 : 1200;
+            var start = performance.now();
+            function tick(now) {
+                var progress = Math.min((now - start) / duration, 1);
+                el.textContent = Math.round(easeOut(progress) * target) + suffix;
+                if (progress < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        var statsObserver = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.stat-num').forEach(function(el, i) {
+                        setTimeout(function() { animateCounter(el); }, i * 200);
+                    });
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.4 });
+
+        var statsSection = document.getElementById('stats-section');
+        if (statsSection) statsObserver.observe(statsSection);
+
+
+        var isMobile = window.innerWidth <= 700;
+
+        if (isMobile) {
+
+            var howItemObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('how-visible');
+                        howItemObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.4 });
+
+            var howSection = document.getElementById('how-section');
+            if (howSection) {
+                howSection.querySelectorAll('.how-step, .how-connector').forEach(function(el) {
+                    howItemObserver.observe(el);
+                });
+            }
+        } else {
+
+            var howObserver = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.querySelectorAll('.how-step, .how-connector').forEach(function(el) {
+                            el.classList.add('how-visible');
+                        });
+                        howObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.2 });
+
+            var howSection = document.getElementById('how-section');
+            if (howSection) howObserver.observe(howSection);
+        }
+
+    })();
+    </script>
 </body>
 </html>
