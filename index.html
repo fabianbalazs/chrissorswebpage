@@ -574,16 +574,7 @@
         });
 
 
-        window.slotObserver = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    entry.target.querySelectorAll('.time-slot').forEach(function(slot, i) {
-                        setTimeout(function() { slot.classList.add('visible'); }, i * 60);
-                    });
-                    window.slotObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.1 });
+
 
 
         ['.logo2', '.hero p', '#auth-buttons', '#btn-go-booking'].forEach(function(sel, i) {

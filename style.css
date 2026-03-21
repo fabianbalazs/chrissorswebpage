@@ -710,18 +710,7 @@ header {
     transform: translateY(0) scale(1);
 }
 
-.time-slot {
-    opacity: 0;
-    -webkit-transform: translateY(16px);
-    transform: translateY(16px);
-    -webkit-transition: opacity 0.4s ease, -webkit-transform 0.4s ease, border-color 0.2s;
-    transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.2s;
-}
-.time-slot.visible {
-    opacity: 1;
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
-}
+
 
 @media (max-width: 1024px) {
     .container { max-width: 90%; }
