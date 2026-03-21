@@ -60,7 +60,7 @@
         <div class="review-popup" onclick="event.stopPropagation()">
             <div class="review-popup-icon">★</div>
             <h3 class="review-popup-title">Hogy sikerült?</h3>
-            <p class="review-popup-text">Volt egy időpontod nálam! Örülnénk, ha megosztanád a tapasztalataidat – pár másodperc az egész.</p>
+            <p class="review-popup-text">Volt egy időpontod nálunk! Örülnénk, ha megosztanád a tapasztalataidat – pár másodperc az egész.</p>
             <div class="review-popup-btns">
                 <button class="btn" onclick="app.acceptReviewPopup()">Értékelést írok</button>
                 <button class="btn-outline" onclick="app.closeReviewPopup()">Később</button>
@@ -98,7 +98,7 @@
                         <div class="how-step-num">01</div>
                     </div>
                     <h3 class="how-step-title">Regisztrálj</h3>
-                    <p class="how-step-desc">Töltsd ki az előregisztrációs űrlapot. Krisztián személyesen hagyja jóvá a jelentkezésed.</p>
+                    <p class="how-step-desc">Töltsd ki az előregisztrációs űrlapot. Krisztián személyesen hagyja jóvá a hozzáférést.</p>
                 </div>
 
                 <div class="how-connector">
@@ -574,20 +574,16 @@
         });
 
 
-        var slotObserver = new IntersectionObserver(function(entries) {
+        window.slotObserver = new IntersectionObserver(function(entries) {
             entries.forEach(function(entry) {
                 if (entry.isIntersecting) {
                     entry.target.querySelectorAll('.time-slot').forEach(function(slot, i) {
                         setTimeout(function() { slot.classList.add('visible'); }, i * 60);
                     });
-                    slotObserver.unobserve(entry.target);
+                    window.slotObserver.unobserve(entry.target);
                 }
             });
         }, { threshold: 0.1 });
-
-        document.querySelectorAll('.day-group, .calendar-grid').forEach(function(el) {
-            slotObserver.observe(el);
-        });
 
 
         ['.logo2', '.hero p', '#auth-buttons', '#btn-go-booking'].forEach(function(sel, i) {
