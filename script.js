@@ -184,16 +184,14 @@ const app = {
             document.getElementById('btn-go-booking').classList.add('hidden');
             booking.classList.remove('hidden');
 
-
-
-
             howSec.style.display = 'none';
             home.appendChild(booking);
             home.appendChild(introSec);
+            home.appendChild(statsSec);
             home.appendChild(gallery);
             home.appendChild(lightbox);
-            home.appendChild(statsSec);
             home.appendChild(reviews);
+            
 
             this.renderPublicSlots();
         } else {
@@ -201,13 +199,11 @@ const app = {
             document.getElementById('btn-go-booking').classList.add('hidden');
             booking.classList.add('hidden');
 
-
-
             howSec.style.display = '';
             home.appendChild(howSec);
-            home.appendChild(statsSec);
             home.appendChild(introSec);
             home.appendChild(gallery);
+            home.appendChild(statsSec);
             home.appendChild(lightbox);
             home.appendChild(reviews);
             home.appendChild(booking);
@@ -229,9 +225,11 @@ const app = {
         const btn = document.querySelector(`button[onclick="app.toggleAccordion('${id}')"]`);
         if (content.style.maxHeight) {
             content.style.maxHeight = null;
+            content.style.overflow = 'hidden';
             btn.classList.remove('active');
         } else {
-            content.style.maxHeight = content.scrollHeight + "px";
+            content.style.maxHeight = '9999px';
+            content.style.overflow = 'visible';
             btn.classList.add('active');
         }
     },
@@ -315,7 +313,7 @@ const app = {
         if(slot) {
             this.bookingSlotId = id;
             document.getElementById('booking-details-display').innerText = `${slot.location} - ${slot.date} ${slot.time}`;
-            document.getElementById('client-phone').value = '';
+            document.getElementById('client-phone').value = this.activeUser.phone || '';
             document.getElementById('client-email').value = '';
             document.getElementById('client-note').value = '';
             this.hideAllViews();
@@ -329,10 +327,8 @@ const app = {
         const note = document.getElementById('client-note').value;
 
         const cleanPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
-        const isHungarian = /^(\+36|06)\d{9}$/.test(cleanPhone);
         const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-        if (!isHungarian) return this.showNotification('Hibás telefonszám! (06... vagy +36...)', 'error');
         if (!isEmailValid) return this.showNotification('Kérlek adj meg egy érvényes e-mail címet!', 'error');
         if (!note || note.length < 3) {
             return this.showNotification('Kérlek írj egy rövid megjegyzést!', 'error');
@@ -386,6 +382,8 @@ const app = {
     checkPendingReviews: function() {
         if (!this.activeUser) return;
         const now = new Date();
+        const shownKey = `reviewPopupShown_${this.activeUser.id}`;
+        const alreadyShown = JSON.parse(localStorage.getItem(shownKey) || '[]');
         const pending = this.data.filter(slot => {
             if (!slot.booked) return false;
             if (slot.clientName !== this.activeUser.name) return false;
@@ -393,10 +391,13 @@ const app = {
             const apptDate = new Date(`${slot.date}T${slot.time}:00`);
             const diffHours = (now - apptDate) / (1000 * 60 * 60);
             if (diffHours < 1) return false;
+            if (alreadyShown.includes(slot.id)) return false;
             return !this.reviews.some(r => r.appointmentId === slot.id);
         });
         if (pending.length > 0) {
             this.showReviewPopup(pending[0].id);
+            alreadyShown.push(pending[0].id);
+            localStorage.setItem(shownKey, JSON.stringify(alreadyShown));
         }
     },
 
@@ -756,12 +757,39 @@ const app = {
         for (let day = 1; day <= daysInMonth; day++) {
             const dayDiv = document.createElement('div');
             dayDiv.className = 'calendar-day';
-            dayDiv.innerText = day;
+            dayDiv.style.position = 'relative';
             const currentMonthStr = (month + 1).toString().padStart(2, '0');
             const currentDayStr = day.toString().padStart(2, '0');
             const dateStr = `${year}-${currentMonthStr}-${currentDayStr}`;
-            const hasBooking = this.data.some(slot => slot.date === dateStr && slot.booked);
-            if (hasBooking) dayDiv.classList.add('has-booking');
+            const bookingCount = this.data.filter(slot => slot.date === dateStr && slot.booked).length;
+
+            dayDiv.innerHTML = `<span>${day}</span>`;
+
+            if (bookingCount > 0) {
+                dayDiv.classList.add('has-booking');
+                const badge = document.createElement('span');
+                badge.innerText = bookingCount;
+                badge.style.cssText = `
+                    position: absolute;
+                    top: -8px;
+                    right: -8px;
+                    min-width: 20px;
+                    height: 20px;
+                    padding: 0 4px;
+                    border-radius: 50%;
+                    background: #888;
+                    color: #fff;
+                    font-size: 0.65rem;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    line-height: 1;
+                    z-index: 2;
+                `;
+                dayDiv.appendChild(badge);
+            }
+
             dayDiv.onclick = () => {
                 document.querySelectorAll('.calendar-day').forEach(d => d.classList.remove('selected'));
                 dayDiv.classList.add('selected');
@@ -809,21 +837,84 @@ const app = {
     },
 
     renderAdminLists: function() {
-        const sorted = this.data.sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
-        const lists = { mf: document.getElementById('list-manage-feher'), md: document.getElementById('list-manage-debrecen') };
-        Object.values(lists).forEach(l => l.innerHTML = '');
-        let counts = { mf:0, md:0 };
+        const sorted = this.data.slice().sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+        const listFeher = document.getElementById('list-manage-feher');
+        const listDebrecen = document.getElementById('list-manage-debrecen');
+        if (listFeher) listFeher.innerHTML = '';
+        if (listDebrecen) listDebrecen.innerHTML = '';
+        let counts = { mf: 0, md: 0 };
+
+        const groups = { 'Fehérgyarmat': {}, 'Debrecen': {} };
         sorted.forEach(slot => {
-            const manageItem = document.createElement('div');
-            manageItem.className = 'dashboard-item';
-            manageItem.innerHTML = `
-                <div><span style="color:#fff; font-weight:bold;">${slot.date} ${slot.time}</span>
-                ${slot.booked ? '<span style="color:var(--danger); margin-left:10px;">[FOGLALT]</span>' : '<span style="color:#777;">[SZABAD]</span>'}</div>
-                <div class="delete-btn" onclick="app.deleteSlot('${slot.id}')">Törlés</div>
-            `;
-            if(slot.location === 'Fehérgyarmat') { lists.mf.appendChild(manageItem); counts.mf++; }
-            else { lists.md.appendChild(manageItem); counts.md++; }
+            const loc = slot.location === 'Fehérgyarmat' ? 'Fehérgyarmat' : 'Debrecen';
+            if (!groups[loc][slot.date]) groups[loc][slot.date] = [];
+            groups[loc][slot.date].push(slot);
+            if (loc === 'Fehérgyarmat') counts.mf++;
+            else counts.md++;
         });
+
+        const renderLocationGroups = (container, locationGroups) => {
+            if (!container) return;
+            const dates = Object.keys(locationGroups).sort();
+            if (dates.length === 0) {
+                container.innerHTML = '<p style="color:#666; font-style:italic; padding:10px;">Nincs aktív időpont.</p>';
+                return;
+            }
+            dates.forEach(date => {
+                const slots = locationGroups[date];
+                const dateObj = new Date(date);
+                const dayName = dateObj.toLocaleDateString('hu-HU', { weekday: 'long' });
+                const formattedDate = date.replace(/-/g, '.').substring(5);
+                const bookedCount = slots.filter(s => s.booked).length;
+
+                const dayWrapper = document.createElement('div');
+                dayWrapper.className = 'day-group';
+                dayWrapper.style.marginBottom = '8px';
+
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.style.cursor = 'pointer';
+                header.innerHTML = `
+                    <span>${formattedDate} – ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}</span>
+                    <span style="font-size:0.8rem; color:#888;">${slots.length} időpont${bookedCount > 0 ? ` · <span style="color:var(--danger)">${bookedCount} foglalt</span>` : ''}</span>
+                `;
+
+                const slotsDiv = document.createElement('div');
+                slotsDiv.style.cssText = 'display:none; flex-direction:column; gap:8px; padding:12px 16px; background:transparent; border-top:1px solid #333;';
+
+                slots.forEach(slot => {
+                    const item = document.createElement('div');
+                    item.className = 'dashboard-item';
+                    item.style.cssText = 'margin:0; border-radius:4px;';
+                    if (slot.booked) item.style.borderLeftColor = 'var(--danger)';
+                    item.innerHTML = `
+                        <div>
+                            <span style="color:#fff; font-weight:bold;">${slot.time}</span>
+                            ${slot.booked
+                                ? `<span style="color:var(--danger); margin-left:8px; font-size:0.8rem;">[FOGLALT – ${slot.clientName || ''}]</span>`
+                                : '<span style="color:#777; margin-left:8px; font-size:0.8rem;">[SZABAD]</span>'
+                            }
+                        </div>
+                        <div class="delete-btn" onclick="app.deleteSlot('${slot.id}')">Törlés</div>
+                    `;
+                    slotsDiv.appendChild(item);
+                });
+
+                header.onclick = () => {
+                    const isOpen = slotsDiv.style.display === 'flex';
+                    slotsDiv.style.display = isOpen ? 'none' : 'flex';
+                    header.style.background = isOpen ? '' : '#252525';
+                };
+
+                dayWrapper.appendChild(header);
+                dayWrapper.appendChild(slotsDiv);
+                container.appendChild(dayWrapper);
+            });
+        };
+
+        renderLocationGroups(listFeher, groups['Fehérgyarmat']);
+        renderLocationGroups(listDebrecen, groups['Debrecen']);
+
         document.getElementById('count-manage-feher').innerText = counts.mf;
         document.getElementById('count-manage-debrecen').innerText = counts.md;
 

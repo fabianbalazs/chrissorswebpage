@@ -58,7 +58,6 @@
 
     <div id="review-popup-overlay" class="review-popup-overlay hidden" onclick="app.closeReviewPopup()">
         <div class="review-popup" onclick="event.stopPropagation()">
-            <div class="review-popup-icon">★</div>
             <h3 class="review-popup-title">Hogy sikerült?</h3>
             <p class="review-popup-text">Volt egy időpontod nálunk! Örülnénk, ha megosztanád a tapasztalataidat – pár másodperc az egész.</p>
             <div class="review-popup-btns">
@@ -359,10 +358,7 @@
             <h2 class="box-title">Foglalás Véglegesítése</h2>
             <p class="booking-subtitle" id="booking-details-display">...</p>
 
-            <div class="form-group">
-                <label>Telefonszám</label>
-                <input type="tel" id="client-phone" placeholder="Pl. 06701234567">
-            </div>
+            <input type="hidden" id="client-phone">
             <div class="form-group">
                 <label>Email cím</label>
                 <input type="email" id="client-email" placeholder="Pl. gipszjakab@gmail.com">

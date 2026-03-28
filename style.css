@@ -360,7 +360,7 @@ header {
 .accordion-btn:hover, .accordion-btn.active { background-color: var(--bg-3); color: var(--primary); }
 .accordion-content {
     padding: 0 18px; background-color: var(--bg-2);
-    max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
+    max-height: 0; overflow: hidden;
     border-left: 1px solid var(--bg-4); border-right: 1px solid var(--bg-4); margin-bottom: 10px;
 }
 .count-badge {
@@ -445,8 +445,7 @@ footer {
 
 .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 .calendar-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-weight: bold; color: var(--text-gray); margin-bottom: 10px; }
-.calendar-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-
+.calendar-days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; padding: 4px; }
 .calendar-day {
     aspect-ratio: 1/1;
     background: var(--bg-4);
@@ -458,6 +457,7 @@ footer {
     transition: 0.2s;
     font-size: 0.9rem;
     position: relative;
+    overflow: visible;
 }
 .calendar-day:hover { background: var(--bg-4); }
 .calendar-day.empty { background: transparent; cursor: default; }
@@ -1253,28 +1253,22 @@ header {
 }
 
 .review-popup {
-    background: var(--bg-2);
-    border: 1px solid rgba(212,175,55,0.3);
-    border-top: 3px solid var(--primary);
+    background: rgba(22,22,22,0.60);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(212,175,55,0.25);
     border-radius: 10px;
     padding: 2.5rem 2rem;
     max-width: 400px;
     width: 100%;
     text-align: center;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    box-shadow: 0 4px 32px rgba(0,0,0,0.55);
     animation: popupIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes popupIn {
     from { opacity: 0; transform: translateY(24px) scale(0.97); }
     to { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.review-popup-icon {
-    font-size: 2.4rem;
-    color: var(--primary);
-    margin-bottom: 1rem;
-    line-height: 1;
 }
 
 .review-popup-title {
