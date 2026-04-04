@@ -421,6 +421,8 @@ const app = {
         const text = document.getElementById('review-text').value.trim();
         if(this.currentRating === 0) return this.showNotification('Kérlek adj meg egy csillagos értékelést!', 'error');
 
+        if(!text) return this.showNotification('Kérlek írj egy rövid szöveges értékelést is!', 'error');
+        
         db.collection("reviews").add({
             appointmentId: this.reviewingSlotId,
             userName: this.activeUser.name,
