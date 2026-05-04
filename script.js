@@ -50,26 +50,40 @@ const app = {
             if(this.currentAdmin) this.renderAdminReviews();
         });
 
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user && user.email === 'admin@chrissors.hu') {
-            console.log("Admin hitelesítve, védett adatok betöltése...");
+        // ÚJ Auth figyelő - Firebase Auth alapú ellenőrzés
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                if (user.email === 'admin@chrissors.hu') {
+                    console.log("Admin hitelesítve, védett adatok betöltése...");
+                    db.collection("users").onSnapshot((querySnapshot) => {
+                        this.users = [];
+                        querySnapshot.forEach((doc) => {
+                            this.users.push({ id: doc.id, ...doc.data() });
+                        });
+                        if(this.currentAdmin) this.renderAdminLists();
+                    });
 
-            db.collection("users").onSnapshot((querySnapshot) => {
-                this.users = [];
-                querySnapshot.forEach((doc) => {
-                    this.users.push({ id: doc.id, ...doc.data() });
-                });
-                if(this.currentAdmin) this.renderAdminLists();
-            });
-
-            this.currentAdmin = "Admin";
-
-            const isAtAdminUrl = window.location.hash === '#admin' || window.location.search.includes('admin');
-            if (isAtAdminUrl) {
-                this.showDashboard();
+                    this.currentAdmin = "Admin";
+                    const isAtAdminUrl = window.location.hash === '#admin' || window.location.search.includes('admin');
+                    if (isAtAdminUrl) this.showDashboard();
+                } else {
+                    // Sima felhasználó betöltése Firestore-ból Auth UID alapján
+                    db.collection("users").doc(user.uid).get().then((doc) => {
+                        if (doc.exists) {
+                            const userData = { id: doc.id, ...doc.data() };
+                            if (userData.status === 'approved') {
+                                this.activeUser = userData;
+                                this.renderUserBookings();
+                            }
+                        }
+                    });
+                }
+            } else {
+                // Senki sincs bejelentkezve
+                this.currentAdmin = null;
+                this.activeUser = null;
             }
-        }
-    });
+        });
 
         const currentPath = window.location.pathname.toLowerCase();
         const currentSearch = window.location.search.toLowerCase();
@@ -137,10 +151,16 @@ const app = {
         }
     },
 
+    // ÚJ: Firebase Auth kijelentkezés
     logoutUser: function() {
-        this.activeUser = null;
-        this.showNotification('Sikeres kijelentkezés!');
-        this.showHome();
+        firebase.auth().signOut().then(() => {
+            this.activeUser = null;
+            this.showNotification('Sikeres kijelentkezés!');
+            this.showHome();
+        }).catch((error) => {
+            console.error("Kijelentkezési hiba:", error);
+            this.showNotification('Hiba a kijelentkezéskor.', 'error');
+        });
     },
 
     showNotification: function(message, type = 'success') {
@@ -192,7 +212,6 @@ const app = {
             home.appendChild(lightbox);
             home.appendChild(reviews);
             
-
             this.renderPublicSlots();
         } else {
             document.getElementById('auth-buttons').classList.remove('hidden');
@@ -234,6 +253,7 @@ const app = {
         }
     },
 
+    // ÚJ: Regisztráció Firebase Auth-al
     submitRegistration: function() {
         if(!document.getElementById('reg-gdpr').checked) {
             return this.showNotification('A regisztrációhoz el kell fogadnod a feltételeket!', 'error');
@@ -242,69 +262,85 @@ const app = {
         const name = document.getElementById('reg-name').value;
         const phone = document.getElementById('reg-phone').value;
         const insta = document.getElementById('reg-insta').value;
+        const email = document.getElementById('reg-email').value; // Új mező
         const pass = document.getElementById('reg-pass').value;
 
-        if(!name || !phone || !insta || !pass) return this.showNotification('Minden mezőt tölts ki!', 'error');
+        if(!name || !phone || !insta || !email || !pass) return this.showNotification('Minden mezőt tölts ki!', 'error');
 
         const exists = this.users.find(u => u.insta.toLowerCase() === insta.toLowerCase() || u.name.toLowerCase() === name.toLowerCase());
         if(exists) return this.showNotification('Ezzel a névvel vagy Instagram fiókkal már regisztráltak.', 'error');
 
-        db.collection("users").add({
-            name: name,
-            phone: phone,
-            insta: insta,
-            password: pass,
-            status: 'pending',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        // 1. Felhasználó létrehozása Auth-ban
+        firebase.auth().createUserWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            // 2. Adatok mentése Firestore-ba jelszó nélkül
+            return db.collection("users").doc(user.uid).set({
+                name: name,
+                phone: phone,
+                insta: insta,
+                email: email,
+                status: 'pending',
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
         })
         .then(() => {
+            // Még pending, ezért azonnal kiléptetjük
+            firebase.auth().signOut();
+            
             this.showNotification('Regisztráció elküldve! Várj a jóváhagyásra.', 'success');
             document.getElementById('reg-name').value = '';
             document.getElementById('reg-phone').value = '';
             document.getElementById('reg-insta').value = '';
+            document.getElementById('reg-email').value = '';
             document.getElementById('reg-pass').value = '';
             this.showHome();
+        })
+        .catch((error) => {
+            console.error("Regisztrációs hiba:", error);
+            this.showNotification('Hiba: ' + (error.code === 'auth/email-already-in-use' ? 'Ez az e-mail cím már foglalt.' : 'Sikertelen regisztráció.'), 'error');
         });
     },
 
+    // ÚJ: Belépés Firebase Auth-al
     userLogin: function() {
-    const name = document.getElementById('login-name').value;
-    const pass = document.getElementById('login-pass').value;
+        const email = document.getElementById('login-email').value;
+        const pass = document.getElementById('login-pass').value;
 
-    if (!name || !pass) return this.showNotification('Töltsd ki a mezőket!', 'error');
+        if (!email || !pass) return this.showNotification('Töltsd ki a mezőket!', 'error');
 
+        firebase.auth().signInWithEmailAndPassword(email, pass)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            return db.collection("users").doc(user.uid).get();
+        })
+        .then((doc) => {
+            if (doc.exists) {
+                const userData = { id: doc.id, ...doc.data() };
 
-    db.collection("users")
-        .where("name", "==", name)
-        .where("password", "==", pass)
-        .get()
-        .then((querySnapshot) => {
-            if (querySnapshot.empty) {
-                this.showNotification('Hibás név vagy jelszó.', 'error');
-                return;
-            }
+                if (userData.status === 'pending') {
+                    firebase.auth().signOut();
+                    this.showNotification('A regisztrációd még jóváhagyásra vár.', 'error');
+                    return;
+                }
 
-            const userDoc = querySnapshot.docs[0];
-            const user = { id: userDoc.id, ...userDoc.data() };
-
-            if (user.status === 'pending') {
-                this.showNotification('A regisztrációd még jóváhagyásra vár.', 'error');
-                return;
-            }
-
-            if (user.status === 'approved') {
-                this.activeUser = user;
-                this.showNotification(`Sikeres belépés! Üdv, ${user.name}`, 'success');
-                document.getElementById('login-name').value = '';
-                document.getElementById('login-pass').value = '';
-                this.showHome();
-                this.renderUserBookings();
-                this.checkPendingReviews();
+                if (userData.status === 'approved') {
+                    this.activeUser = userData;
+                    this.showNotification(`Sikeres belépés! Üdv, ${userData.name}`, 'success');
+                    document.getElementById('login-email').value = '';
+                    document.getElementById('login-pass').value = '';
+                    this.showHome();
+                    this.renderUserBookings();
+                    this.checkPendingReviews();
+                }
+            } else {
+                firebase.auth().signOut();
+                this.showNotification('Nincs ilyen profil.', 'error');
             }
         })
         .catch((error) => {
             console.error("Login hiba:", error);
-            this.showNotification('Hiba történt a belépés során.', 'error');
+            this.showNotification('Hibás e-mail cím vagy jelszó.', 'error');
         });
     },
 
@@ -314,7 +350,7 @@ const app = {
             this.bookingSlotId = id;
             document.getElementById('booking-details-display').innerText = `${slot.location} - ${slot.date} ${slot.time}`;
             document.getElementById('client-phone').value = this.activeUser.phone || '';
-            document.getElementById('client-email').value = '';
+            document.getElementById('client-email').value = this.activeUser.email || '';
             document.getElementById('client-note').value = '';
             this.hideAllViews();
             document.getElementById('view-booking-form').classList.remove('hidden');
@@ -518,7 +554,6 @@ const app = {
             this.showHome();
         });
     },
-
 
     switchAdminTab: function(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -731,7 +766,6 @@ const app = {
             this.showDashboard();
         });
     },
-
 
     changeMonth: function(step) {
         this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + step);
@@ -948,25 +982,19 @@ const app = {
             });
         }
     },
+
     renderPublicSlots: function() {
         const container = document.getElementById('slots-container');
         const msg = document.getElementById('no-slots-msg');
         container.innerHTML = '';
 
-
         const now = new Date();
         const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
 
         const filtered = this.data.filter(item => {
-
             const isFree = item.location === this.currentLocation && !item.booked;
-
-
             const slotDateTime = new Date(`${item.date}T${item.time}:00`);
-
-
             const isAfter24h = slotDateTime > tomorrow;
-
             return isFree && isAfter24h;
         })
         .sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
@@ -1018,9 +1046,7 @@ const app = {
 
             header.onclick = () => {
                 const isHidden = slotsDiv.classList.contains('hidden');
-
                 document.querySelectorAll('.day-slots').forEach(d => d.classList.add('hidden'));
-
                 if (isHidden) {
                     slotsDiv.classList.remove('hidden');
                 }
