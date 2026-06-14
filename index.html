@@ -352,7 +352,23 @@
             </div>
 
             <button class="btn" style="width:100%" onclick="app.userLogin()">Belépés</button>
-            <p class="back-link" onclick="app.showHome()">Vissza</p>
+            <p class="back-link" style="margin-top:14px;" onclick="app.showForgotPassword()">Elfelejtettem a jelszavam</p>
+            <p class="back-link" style="margin-top:6px;" onclick="app.showHome()">Vissza</p>
+        </div>
+    </div>
+
+    <div id="view-forgot-password" class="hidden">
+        <div class="form-box">
+            <h2 class="box-title">Jelszó visszaállítása</h2>
+            <p class="booking-subtitle">Add meg az e-mail címed, és küldünk egy visszaállító linket.</p>
+
+            <div class="form-group">
+                <label>E-mail cím</label>
+                <input type="email" id="forgot-email" placeholder="E-mail cím">
+            </div>
+
+            <button class="btn" style="width:100%" onclick="app.sendPasswordReset()">Link küldése</button>
+            <p class="back-link" onclick="app.showUserLogin()">Vissza a belépéshez</p>
         </div>
     </div>
 

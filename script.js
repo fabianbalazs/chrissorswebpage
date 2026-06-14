@@ -230,6 +230,7 @@ const app = {
     },
     showRegister: function() { this.hideAllViews(); document.getElementById('view-register').classList.remove('hidden'); },
     showUserLogin: function() { this.hideAllViews(); document.getElementById('view-user-login').classList.remove('hidden'); },
+    showForgotPassword: function() { this.hideAllViews(); document.getElementById('view-forgot-password').classList.remove('hidden'); },
     showLogin: function() { this.hideAllViews(); document.getElementById('view-login').classList.remove('hidden'); },
     showDashboard: function() {
         this.hideAllViews();
@@ -298,7 +299,16 @@ const app = {
         })
         .catch((error) => {
             console.error("Regisztrációs hiba:", error);
-            this.showNotification('Hiba: ' + (error.code === 'auth/email-already-in-use' ? 'Ez az e-mail cím már foglalt.' : 'Sikertelen regisztráció.'), 'error');
+            const messages = {
+                'auth/email-already-in-use': 'Ez az e-mail cím már foglalt.',
+                'auth/invalid-email': 'Érvénytelen e-mail cím formátum.',
+                'auth/weak-password': 'A jelszó túl gyenge. Legalább 6 karakter szükséges.',
+                'auth/password-does-not-meet-requirements': 'A jelszó nem felel meg a követelményeknek.',
+                'auth/operation-not-allowed': 'A regisztráció jelenleg nem engedélyezett.',
+                'auth/network-request-failed': 'Hálózati hiba. Ellenőrizd az internetkapcsolatod.',
+            };
+            const msg = messages[error.code] || 'Sikertelen regisztráció. Próbáld újra.';
+            this.showNotification(msg, 'error');
         });
     },
 
@@ -341,6 +351,42 @@ const app = {
         .catch((error) => {
             console.error("Login hiba:", error);
             this.showNotification('Hibás e-mail cím vagy jelszó.', 'error');
+        });
+    },
+
+    sendPasswordReset: function() {
+        const email = document.getElementById('forgot-email').value.trim();
+        if (!email) return this.showNotification('Add meg az e-mail címed!', 'error');
+
+        const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000;
+
+        const userRecord = this.users.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+
+        if (userRecord) {
+            const lastReset = userRecord.lastPasswordReset;
+            if (lastReset) {
+                const lastResetDate = lastReset.toDate ? lastReset.toDate() : new Date(lastReset);
+                const elapsed = Date.now() - lastResetDate.getTime();
+                if (elapsed < TWO_WEEKS_MS) {
+                    const daysLeft = Math.ceil((TWO_WEEKS_MS - elapsed) / (24 * 60 * 60 * 1000));
+                    return this.showNotification(`Jelszót legkorábban ${daysLeft} nap múlva változtathatsz újra.`, 'error');
+                }
+            }
+
+            db.collection("users").doc(userRecord.id).update({
+                lastPasswordReset: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        firebase.auth().sendPasswordResetEmail(email)
+        .then(() => {
+            this.showNotification('Visszaállító link elküldve! Ellenőrizd az emailedet. (Spam-et is)', 'success');
+            document.getElementById('forgot-email').value = '';
+            this.showUserLogin();
+        })
+        .catch((error) => {
+            console.error("Reset hiba:", error);
+            this.showNotification('Hiba történt. Ellenőrizd az e-mail címet!', 'error');
         });
     },
 
