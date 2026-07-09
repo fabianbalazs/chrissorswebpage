@@ -182,6 +182,40 @@ header {
     z-index: 2;
 }
 
+.hero-appointments {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 0.5rem;
+    margin-bottom: 1.8rem;
+    max-width: 600px;
+}
+.hero-appt-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--primary);
+    border-radius: 16px;
+    padding: 16px 20px;
+    min-width: 130px;
+    text-align: center;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 0 14px rgba(212,175,55,0.25);
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+.hero-appt-card:hover { transform: translateY(-3px); box-shadow: 0 0 20px rgba(212,175,55,0.4); }
+.hero-appt-loc {
+    color: var(--primary);
+    font-weight: bold;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+.hero-appt-date { color: #fff; font-size: 1rem; font-weight: bold; }
+.hero-appt-time { color: var(--text-gray); font-size: 0.85rem; margin-top: 2px; }
+
 .btn {
     background-color: var(--primary);
     color: var(--dark);
@@ -461,8 +495,21 @@ footer {
 }
 .calendar-day:hover { background: var(--bg-4); }
 .calendar-day.empty { background: transparent; cursor: default; }
-.calendar-day.has-booking { background-color: var(--primary); color: var(--dark); font-weight: bold; }
+.calendar-day.has-booking { 
+    background-color: var(--primary); 
+    color: #000; 
+    font-weight: bold; 
+    box-shadow: 0 0 10px 2px rgba(212,175,55,0.4); 
+}
 .calendar-day.selected { border: 3px solid white; }
+.calendar-day.today { 
+    background-color: #fff !important; 
+    color: #000 !important; 
+    font-weight: bold; 
+    box-shadow: 0 0 10px 2px rgba(255,255,255,0.55) !important; 
+    border: 2px solid white; 
+    z-index: 1; 
+}
 
 .split-view-container { display: flex; flex-direction: column; gap: 20px; }
 .split-column { background: var(--bg-3); padding: 15px; border-radius: 8px; }

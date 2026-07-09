@@ -34,7 +34,7 @@ const app = {
                 this.data.push({ id: doc.id, ...doc.data() });
             });
             this.renderPublicSlots();
-            if(this.activeUser) this.renderUserBookings();
+            if(this.activeUser) { this.renderUserBookings(); this.renderHeroBookings(); }
             if(this.currentAdmin) {
                 this.renderAdminLists();
                 this.renderAdminCalendar();
@@ -50,6 +50,7 @@ const app = {
             if(this.currentAdmin) this.renderAdminReviews();
         });
 
+        
         // ÚJ Auth figyelő - Firebase Auth alapú ellenőrzés
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
@@ -74,6 +75,12 @@ const app = {
                             if (userData.status === 'approved') {
                                 this.activeUser = userData;
                                 this.renderUserBookings();
+                                this.renderHeroBookings();
+                                
+                                // ÚJ RÉSZ: Frissítjük a UI-t, hogy eltűnjenek a login gombok
+                                if (!document.getElementById('view-home').classList.contains('hidden')) {
+                                    this.showHome();
+                                }
                             }
                         }
                     });
@@ -82,6 +89,12 @@ const app = {
                 // Senki sincs bejelentkezve
                 this.currentAdmin = null;
                 this.activeUser = null;
+                
+                // ÚJ RÉSZ: Biztosítjuk, hogy a kártyák eltűnjenek és a gombok visszajöjjenek kilépéskor
+                this.renderHeroBookings();
+                if (!document.getElementById('view-home').classList.contains('hidden')) {
+                    this.showHome();
+                }
             }
         });
 
@@ -151,10 +164,55 @@ const app = {
         }
     },
 
+    renderHeroBookings: function() {
+        const container = document.getElementById('hero-user-appointments');
+        if (!container) return;
+
+        if (!this.activeUser) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        const myBookings = this.data.filter(slot =>
+            slot.booked &&
+            slot.clientName === this.activeUser.name &&
+            slot.clientInsta === this.activeUser.insta
+        ).sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+
+        const now = new Date();
+        const upcoming = myBookings.filter(slot => {
+            const apptDate = new Date(`${slot.date}T${slot.time}:00`);
+            return (now - apptDate) / (1000 * 60 * 60) < 1;
+        });
+
+        if (upcoming.length === 0) {
+            container.classList.add('hidden');
+            container.innerHTML = '';
+            return;
+        }
+
+        container.innerHTML = '<div style="width: 100%; text-align: center; margin-bottom: 5px;"><h3 style="color: var(--primary); font-size: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">Általad foglalt aktív időpontok</h3></div>';
+        
+        upcoming.forEach(slot => {
+            const formattedDate = slot.date.replace(/-/g, '.').substring(5);
+            const card = document.createElement('div');
+            card.className = 'hero-appt-card';
+            card.innerHTML = `
+                <div class="hero-appt-loc">${slot.location}</div>
+                <div class="hero-appt-date">${formattedDate}</div>
+                <div class="hero-appt-time">${slot.time}</div>
+            `;
+            container.appendChild(card);
+        });
+        container.classList.remove('hidden');
+    },
+
     // ÚJ: Firebase Auth kijelentkezés
     logoutUser: function() {
         firebase.auth().signOut().then(() => {
             this.activeUser = null;
+            this.renderHeroBookings();
             this.showNotification('Sikeres kijelentkezés!');
             this.showHome();
         }).catch((error) => {
@@ -203,6 +261,7 @@ const app = {
             document.getElementById('auth-buttons').classList.add('hidden');
             document.getElementById('btn-go-booking').classList.add('hidden');
             booking.classList.remove('hidden');
+            this.renderHeroBookings();
 
             howSec.style.display = 'none';
             home.appendChild(booking);
@@ -216,6 +275,7 @@ const app = {
         } else {
             document.getElementById('auth-buttons').classList.remove('hidden');
             document.getElementById('btn-go-booking').classList.add('hidden');
+            document.getElementById('hero-user-appointments').classList.add('hidden');
             booking.classList.add('hidden');
 
             howSec.style.display = '';
@@ -341,6 +401,7 @@ const app = {
                     document.getElementById('login-pass').value = '';
                     this.showHome();
                     this.renderUserBookings();
+                    this.renderHeroBookings();
                     this.checkPendingReviews();
                 }
             } else {
@@ -844,6 +905,14 @@ const app = {
             const currentDayStr = day.toString().padStart(2, '0');
             const dateStr = `${year}-${currentMonthStr}-${currentDayStr}`;
             const bookingCount = this.data.filter(slot => slot.date === dateStr && slot.booked).length;
+
+            // ÚJ RÉSZ: Mai nap azonosítása
+            const realToday = new Date();
+            const realTodayStr = `${realToday.getFullYear()}-${(realToday.getMonth() + 1).toString().padStart(2, '0')}-${realToday.getDate().toString().padStart(2, '0')}`;
+
+            if (dateStr === realTodayStr) {
+                dayDiv.classList.add('today');
+            }
 
             dayDiv.innerHTML = `<span>${day}</span>`;
 

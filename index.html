@@ -13,7 +13,7 @@
 <body>
 
     <header>
-        <img src="logo png.webp" alt="logo" class="logo" onclick="window.location.href='index.html'">
+        <img src="logo png.webp" alt="logo" class="logo" onclick="app.logoutUser()">
 
         <div class="hamburger" onclick="app.toggleDrawer()">
             <div class="bar"></div>
@@ -71,6 +71,8 @@
         <div class="hero">
             <img src="logo png.webp" alt="logo" class="logo2">
             <p style="font-weight: bold; font-size: 21px;">Prémium hajvágás Krisztiántól.</p>
+
+            <div id="hero-user-appointments" class="hero-appointments hidden"></div>
 
             <div id="auth-buttons">
                 <p style="margin-top:-15px; margin-bottom:30px; color:#ccc; font-size: 12px;">Az időpontfoglalás regisztrációhoz kötött.</p>
