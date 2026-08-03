@@ -1104,7 +1104,7 @@ const app = {
         container.innerHTML = '';
 
         const now = new Date();
-        const tomorrow = new Date(now.getTime() + (24 * 60 * 60 * 1000));
+        const tomorrow = new Date(now.getTime() + (6 * 60 * 60 * 1000));
 
         const filtered = this.data.filter(item => {
             const isFree = item.location === this.currentLocation && !item.booked;
