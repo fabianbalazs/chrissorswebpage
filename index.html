@@ -56,6 +56,10 @@
 
     <div id="toast-container"></div>
 
+    <div id="price-list-popup" class="price-list-popup hidden">
+        <button class="price-list-btn" onclick="window.open('arak.html', '_blank')">Árlista</button>
+    </div>
+
     <div id="review-popup-overlay" class="review-popup-overlay hidden" onclick="app.closeReviewPopup()">
         <div class="review-popup" onclick="event.stopPropagation()">
             <h3 class="review-popup-title">Hogy sikerült?</h3>
@@ -384,14 +388,22 @@
                 <label>Email cím</label>
                 <input type="email" id="client-email" placeholder="Pl. gipszjakab@gmail.com">
             </div>
+            
+            <!-- ÚJ: Szolgáltatás választó -->
             <div class="form-group">
-                <label>Milyen hajat szeretnél vágatni?</label>
-                <textarea id="client-note" placeholder="Pl. Csak átmenet | Fade + felülről | Low taper fade + hossz"></textarea>
+                <label>Válassz szolgáltatást:</label>
+                <div id="booking-services-container" class="services-check-grid"></div>
+                <div id="booking-time-display" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem; color: var(--primary);">Összidő: 0 perc (Max: 60 perc)</div>
+            </div>
+
+            <div class="form-group">
+                <label>Megjegyzés / Kérés (Opcionális)</label>
+                <textarea id="client-note" placeholder="Pl.: Kérem, hogy a szakállamat is igazítsuk..."></textarea>
             </div>
 
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-outline" style="flex:1" onclick="app.showHome()">Mégsem</button>
-                <button class="btn" style="flex:2" onclick="app.submitBooking()">Foglalás megerősítése</button>
+                <button id="btn-submit-booking" class="btn" style="flex:2" onclick="app.submitBooking()" disabled>Foglalás megerősítése</button>
             </div>
         </div>
     </div>
@@ -419,9 +431,11 @@
                 <button class="btn btn-outline" onclick="app.logout()">Kilépés</button>
             </div>
 
+            <!-- ÚJ: Szolgáltatások fül hozzáadva -->
             <div class="admin-tabs">
                 <button class="tab-btn active" id="tab-manage" onclick="app.switchAdminTab('manage')">Időpontok</button>
                 <button class="tab-btn" id="tab-bookings" onclick="app.switchAdminTab('bookings')">Foglalások</button>
+                <button class="tab-btn" id="tab-services" onclick="app.switchAdminTab('services')">Szolgáltatások</button>
                 <button class="tab-btn" id="tab-pending" onclick="app.switchAdminTab('pending')">Jelentkezések</button>
                 <button class="tab-btn" id="tab-users" onclick="app.switchAdminTab('users')">Vendégek</button>
                 <button class="tab-btn" id="tab-reviews" onclick="app.switchAdminTab('reviews')">Vélemények</button>
@@ -429,15 +443,17 @@
 
             <div id="admin-section-manage">
                 <div class="dashboard-box">
-                    <h3 class="box-header">Új időpont hirdetése</h3>
+                    <h3 class="box-header">Új időpont hirdetése (Óránkénti generálás)</h3>
+                    <!-- ÚJ: Intervallum bekérése -->
                     <div class="add-slot-grid">
                         <select id="new-loc">
                             <option value="Fehérgyarmat">Fehérgyarmat</option>
                             <option value="Debrecen">Debrecen</option>
                         </select>
                         <input type="date" id="new-date">
-                        <input type="time" id="new-time">
-                        <button class="btn" onclick="app.addSlot()">Hozzáadás</button>
+                        <input type="time" id="new-start-time" title="Kezdés">
+                        <input type="time" id="new-end-time" title="Befejezés">
+                        <button class="btn" onclick="app.addSlot()">Létrehozás</button>
                     </div>
                 </div>
                 <h3 style="margin-bottom:10px;">Aktív időpontok</h3>
@@ -445,6 +461,20 @@
                 <div id="manage-feher" class="accordion-content"><div id="list-manage-feher" class="dashboard-list"></div></div>
                 <button class="accordion-btn" onclick="app.toggleAccordion('manage-debrecen')">Debrecen <span class="count-badge" id="count-manage-debrecen">0</span></button>
                 <div id="manage-debrecen" class="accordion-content"><div id="list-manage-debrecen" class="dashboard-list"></div></div>
+            </div>
+
+            <!-- ÚJ: Szolgáltatások szekció -->
+            <div id="admin-section-services" class="hidden">
+                <div class="dashboard-box">
+                    <h3 class="box-header">Új szolgáltatás hozzáadása</h3>
+                    <div class="add-slot-grid" style="grid-template-columns: 2fr 1fr auto;">
+                        <input type="text" id="new-service-name" placeholder="Szolgáltatás neve (pl. Hajvágás)">
+                        <input type="number" id="new-service-time" placeholder="Idő (perc)" min="5" step="5">
+                        <button class="btn" onclick="app.addService()">Mentés</button>
+                    </div>
+                </div>
+                <h3 style="margin-bottom:10px;">Aktív szolgáltatások</h3>
+                <div id="list-admin-services" class="dashboard-list"></div>
             </div>
 
             <div id="admin-section-bookings" class="hidden">
@@ -489,6 +519,13 @@
                     Aktív, elfogadott vendégek
                     <span class="count-badge" id="count-approved-users" style="background-color: rgba(255,255,255,0.75); color:#121212; margin-left:10px; border-radius: 6px;">0</span>
                 </h3>
+                <div class="admin-search-wrap">
+                    <svg class="admin-search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+                        <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <input type="text" id="user-search-input" class="admin-search-input" placeholder="Keresés név alapján..." oninput="app.filterApprovedUsers(this.value)">
+                </div>
                 <div id="list-approved-users" class="dashboard-list"></div>
             </div>
 

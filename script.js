@@ -14,6 +14,7 @@ const app = {
     data: [],
     users: [],
     reviews: [],
+    services: [], 
 
     currentAdmin: null,
     activeUser: null,
@@ -25,19 +26,28 @@ const app = {
     reviewingSlotId: null,
     currentRating: 0,
     editingReviewId: null,
+    userSearchTerm: '',
+
+    escapeHTML: function(str) {
+        if (!str) return '';
+        return str.toString().replace(/[&<>'"]/g, tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag));
+    },
 
     init: function() {
 
-        db.collection("appointments").onSnapshot((querySnapshot) => {
-            this.data = [];
-            querySnapshot.forEach((doc) => {
-                this.data.push({ id: doc.id, ...doc.data() });
-            });
-            this.renderPublicSlots();
-            if(this.activeUser) { this.renderUserBookings(); this.renderHeroBookings(); }
-            if(this.currentAdmin) {
-                this.renderAdminLists();
-                this.renderAdminCalendar();
+        db.collection("appointments").where("booked", "==", false).onSnapshot((querySnapshot) => {
+            if (!this.currentAdmin && !this.activeUser) {
+                this.data = [];
+                querySnapshot.forEach((doc) => {
+                    this.data.push({ id: doc.id, ...doc.data() });
+                });
+                this.renderPublicSlots();
             }
         });
 
@@ -50,12 +60,26 @@ const app = {
             if(this.currentAdmin) this.renderAdminReviews();
         });
 
-        
-        // ÚJ Auth figyelő - Firebase Auth alapú ellenőrzés
+        db.collection("services").onSnapshot((querySnapshot) => {
+            this.services = [];
+            querySnapshot.forEach((doc) => {
+                this.services.push({ id: doc.id, ...doc.data() });
+            });
+            if(this.currentAdmin) this.renderAdminServices();
+        });
+
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 if (user.email === 'admin@chrissors.hu') {
                     console.log("Admin hitelesítve, védett adatok betöltése...");
+                    
+                    db.collection("appointments").onSnapshot((querySnapshot) => {
+                        this.data = [];
+                        querySnapshot.forEach((doc) => { this.data.push({ id: doc.id, ...doc.data() }); });
+                        this.renderPublicSlots();
+                        if(this.currentAdmin) { this.renderAdminLists(); this.renderAdminCalendar(); }
+                    });
+
                     db.collection("users").onSnapshot((querySnapshot) => {
                         this.users = [];
                         querySnapshot.forEach((doc) => {
@@ -68,16 +92,19 @@ const app = {
                     const isAtAdminUrl = window.location.hash === '#admin' || window.location.search.includes('admin');
                     if (isAtAdminUrl) this.showDashboard();
                 } else {
-                    // Sima felhasználó betöltése Firestore-ból Auth UID alapján
                     db.collection("users").doc(user.uid).get().then((doc) => {
                         if (doc.exists) {
                             const userData = { id: doc.id, ...doc.data() };
                             if (userData.status === 'approved') {
                                 this.activeUser = userData;
-                                this.renderUserBookings();
-                                this.renderHeroBookings();
                                 
-                                // ÚJ RÉSZ: Frissítjük a UI-t, hogy eltűnjenek a login gombok
+                                db.collection("appointments").onSnapshot((querySnapshot) => {
+                                    this.data = [];
+                                    querySnapshot.forEach((doc) => { this.data.push({ id: doc.id, ...doc.data() }); });
+                                    this.renderPublicSlots();
+                                    if(this.activeUser) { this.renderUserBookings(); this.renderHeroBookings(); }
+                                });
+                                
                                 if (!document.getElementById('view-home').classList.contains('hidden')) {
                                     this.showHome();
                                 }
@@ -86,11 +113,9 @@ const app = {
                     });
                 }
             } else {
-                // Senki sincs bejelentkezve
                 this.currentAdmin = null;
                 this.activeUser = null;
                 
-                // ÚJ RÉSZ: Biztosítjuk, hogy a kártyák eltűnjenek és a gombok visszajöjjenek kilépéskor
                 this.renderHeroBookings();
                 if (!document.getElementById('view-home').classList.contains('hidden')) {
                     this.showHome();
@@ -208,7 +233,6 @@ const app = {
         container.classList.remove('hidden');
     },
 
-    // ÚJ: Firebase Auth kijelentkezés
     logoutUser: function() {
         firebase.auth().signOut().then(() => {
             this.activeUser = null;
@@ -298,6 +322,7 @@ const app = {
         this.renderAdminLists();
         this.renderAdminCalendar();
         this.renderAdminReviews();
+        this.renderAdminServices();
     },
     hideAllViews: function() { document.querySelectorAll('body > div[id^="view-"]').forEach(el => el.classList.add('hidden')); },
     toggleAccordion: function(id) {
@@ -314,7 +339,6 @@ const app = {
         }
     },
 
-    // ÚJ: Regisztráció Firebase Auth-al
     submitRegistration: function() {
         if(!document.getElementById('reg-gdpr').checked) {
             return this.showNotification('A regisztrációhoz el kell fogadnod a feltételeket!', 'error');
@@ -323,7 +347,7 @@ const app = {
         const name = document.getElementById('reg-name').value;
         const phone = document.getElementById('reg-phone').value;
         const insta = document.getElementById('reg-insta').value;
-        const email = document.getElementById('reg-email').value; // Új mező
+        const email = document.getElementById('reg-email').value;
         const pass = document.getElementById('reg-pass').value;
 
         if(!name || !phone || !insta || !email || !pass) return this.showNotification('Minden mezőt tölts ki!', 'error');
@@ -331,11 +355,9 @@ const app = {
         const exists = this.users.find(u => u.insta.toLowerCase() === insta.toLowerCase() || u.name.toLowerCase() === name.toLowerCase());
         if(exists) return this.showNotification('Ezzel a névvel vagy Instagram fiókkal már regisztráltak.', 'error');
 
-        // 1. Felhasználó létrehozása Auth-ban
         firebase.auth().createUserWithEmailAndPassword(email, pass)
         .then((userCredential) => {
             const user = userCredential.user;
-            // 2. Adatok mentése Firestore-ba jelszó nélkül
             return db.collection("users").doc(user.uid).set({
                 name: name,
                 phone: phone,
@@ -346,9 +368,7 @@ const app = {
             });
         })
         .then(() => {
-            // Még pending, ezért azonnal kiléptetjük
             firebase.auth().signOut();
-            
             this.showNotification('Regisztráció elküldve! Várj a jóváhagyásra.', 'success');
             document.getElementById('reg-name').value = '';
             document.getElementById('reg-phone').value = '';
@@ -372,7 +392,6 @@ const app = {
         });
     },
 
-    // ÚJ: Belépés Firebase Auth-al
     userLogin: function() {
         const email = document.getElementById('login-email').value;
         const pass = document.getElementById('login-pass').value;
@@ -403,6 +422,7 @@ const app = {
                     this.renderUserBookings();
                     this.renderHeroBookings();
                     this.checkPendingReviews();
+                    this.showPriceListPopup();
                 }
             } else {
                 firebase.auth().signOut();
@@ -451,6 +471,110 @@ const app = {
         });
     },
 
+    addService: function() {
+        const name = document.getElementById('new-service-name').value.trim();
+        const time = parseInt(document.getElementById('new-service-time').value);
+
+        if(!name || isNaN(time) || time <= 0) return this.showNotification('Add meg a nevet és az időt helyesen!', 'error');
+
+        db.collection("services").add({
+            name: name,
+            time: time,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            this.showNotification('Szolgáltatás hozzáadva.', 'success');
+            document.getElementById('new-service-name').value = '';
+            document.getElementById('new-service-time').value = '';
+        });
+    },
+
+    deleteService: function(id) {
+        if(confirm('Biztosan törlöd ezt a szolgáltatást?')) {
+            db.collection("services").doc(id).delete().then(() => {
+                this.showNotification('Szolgáltatás törölve.', 'success');
+            });
+        }
+    },
+
+    renderAdminServices: function() {
+        const list = document.getElementById('list-admin-services');
+        if(!list) return;
+        list.innerHTML = '';
+
+        if (this.services.length === 0) {
+            list.innerHTML = '<p style="color:#666; font-style:italic;">Nincs rögzített szolgáltatás.</p>';
+            return;
+        }
+
+        const sorted = this.services.slice().sort((a,b) => a.name.localeCompare(b.name));
+
+        sorted.forEach(srv => {
+            const item = document.createElement('div');
+            item.className = 'dashboard-item';
+            item.style.borderLeftColor = 'var(--primary)';
+            item.innerHTML = `
+                <div>
+                    <strong style="color:white;">${this.escapeHTML(srv.name)}</strong>
+                    <div style="color:#aaa; font-size: 0.85rem;">${srv.time} perc</div>
+                </div>
+                <div class="delete-btn" onclick="app.deleteService('${srv.id}')">Törlés</div>
+            `;
+            list.appendChild(item);
+        });
+    },
+
+    renderBookingServices: function() {
+        const container = document.getElementById('booking-services-container');
+        container.innerHTML = '';
+        
+        if (this.services.length === 0) {
+            container.innerHTML = '<p style="color:#aaa; font-style:italic; font-size: 0.9rem;">Nincsenek elérhető szolgáltatások.</p>';
+        } else {
+            const sorted = this.services.slice().sort((a,b) => a.name.localeCompare(b.name));
+            sorted.forEach(srv => {
+                const label = document.createElement('label');
+                label.className = 'service-check-label';
+                label.innerHTML = `
+                    <input type="checkbox" value="${srv.id}" data-time="${srv.time}" onchange="app.calcBookingTime()">
+                    <span>${this.escapeHTML(srv.name)} <span style="color:var(--primary);">(${srv.time} perc)</span></span>
+                `;
+                container.appendChild(label);
+            });
+        }
+        this.calcBookingTime();
+    },
+
+    calcBookingTime: function() {
+        let total = 0;
+        const checkboxes = document.querySelectorAll('#booking-services-container input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => total += parseInt(cb.dataset.time));
+
+        const slot = this.data.find(x => x.id === this.bookingSlotId);
+        const max = (slot && slot.maxDuration) ? slot.maxDuration : 60; 
+
+        const display = document.getElementById('booking-time-display');
+        display.innerText = `Összidő: ${total} perc (Max: ${max} perc)`;
+
+        const submitBtn = document.getElementById('btn-submit-booking');
+
+        if (total > max) {
+            display.style.color = 'var(--danger)';
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+        } else if (total === 0) {
+            display.style.color = 'var(--text-gray)';
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+        } else {
+            display.style.color = 'var(--primary)';
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+        }
+    },
+
     startBooking: function(id) {
         const slot = this.data.find(x => x.id === id);
         if(slot) {
@@ -458,7 +582,11 @@ const app = {
             document.getElementById('booking-details-display').innerText = `${slot.location} - ${slot.date} ${slot.time}`;
             document.getElementById('client-phone').value = this.activeUser.phone || '';
             document.getElementById('client-email').value = this.activeUser.email || '';
-            document.getElementById('client-note').value = '';
+
+            if(document.getElementById('client-note')) document.getElementById('client-note').value = '';
+            
+            this.renderBookingServices();
+
             this.hideAllViews();
             document.getElementById('view-booking-form').classList.remove('hidden');
         }
@@ -467,26 +595,75 @@ const app = {
     submitBooking: function() {
         const phone = document.getElementById('client-phone').value;
         const email = document.getElementById('client-email').value.trim();
-        const note = document.getElementById('client-note').value;
 
         const cleanPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
         const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
         if (!isEmailValid) return this.showNotification('Kérlek adj meg egy érvényes e-mail címet!', 'error');
-        if (!note || note.length < 3) {
-            return this.showNotification('Kérlek írj egy rövid megjegyzést!', 'error');
-        }
+
+        const checkboxes = Array.from(document.querySelectorAll('#booking-services-container input[type="checkbox"]:checked'));
+        if(checkboxes.length === 0) return this.showNotification('Válassz legalább egy szolgáltatást!', 'error');
+
+        let totalTime = 0;
+        let selectedServices = [];
+        checkboxes.forEach(cb => {
+            totalTime += parseInt(cb.dataset.time);
+            selectedServices.push(cb.nextElementSibling.textContent.trim().split(' (')[0]);
+        });
+
+        const slot = this.data.find(x => x.id === this.bookingSlotId);
+        const maxAllowed = slot.maxDuration || 60;
+        
+        if(totalTime > maxAllowed) return this.showNotification(`Maximum ${maxAllowed} percet foglalhatsz ide!`, 'error');
+
+        const servicesStr = selectedServices.join(', ');
+
+        const userNote = document.getElementById('client-note').value.trim();
+        const combinedNote = userNote ? `${servicesStr} | Megjegyzés: ${userNote}` : servicesStr;
 
         if(this.bookingSlotId) {
-            db.collection("appointments").doc(this.bookingSlotId).update({
+            let promises = [];
+
+            let updatePromise = db.collection("appointments").doc(this.bookingSlotId).update({
                 booked: true,
                 clientName: this.activeUser.name,
                 clientInsta: this.activeUser.insta,
                 clientPhone: cleanPhone,
                 clientEmail: email,
-                clientNote: note
-            })
-            .then(() => {
+                clientNote: combinedNote, 
+                services: servicesStr, 
+                totalDuration: totalTime
+            });
+
+            promises.push(updatePromise);
+
+            if (totalTime <= 30 && maxAllowed === 60) {
+                let currentH = parseInt(slot.time.split(':')[0]);
+                let currentM = parseInt(slot.time.split(':')[1]);
+
+                let newM = currentM + totalTime;
+                let newH = currentH;
+                if(newM >= 60) {
+                    newH += Math.floor(newM / 60);
+                    newM = newM % 60;
+                }
+                
+                let newTimeStr = newH.toString().padStart(2, '0') + ':' + newM.toString().padStart(2, '0');
+                let newMaxDuration = 60 - totalTime;
+
+                let insertPromise = db.collection("appointments").add({
+                    location: slot.location,
+                    date: slot.date,
+                    time: newTimeStr,
+                    booked: false,
+                    maxDuration: newMaxDuration,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                promises.push(insertPromise);
+            }
+
+            Promise.all(promises).then(() => {
                 this.showNotification('Sikeres foglalás!', 'success');
                 this.bookingSlotId = null;
                 this.showHome();
@@ -560,6 +737,24 @@ const app = {
         this.openReviewForm(slotId);
     },
 
+    showPriceListPopup: function() {
+        const popup = document.getElementById('price-list-popup');
+        if (!popup) return;
+
+        popup.classList.remove('hidden');
+        
+        setTimeout(() => {
+            popup.classList.add('show');
+        }, 50);
+
+        setTimeout(() => {
+            popup.classList.remove('show');
+            setTimeout(() => {
+                popup.classList.add('hidden');
+            }, 600);
+        }, 8000);
+    },
+
     submitReview: function() {
         const text = document.getElementById('review-text').value.trim();
         if(this.currentRating === 0) return this.showNotification('Kérlek adj meg egy csillagos értékelést!', 'error');
@@ -606,13 +801,11 @@ const app = {
 
             card.innerHTML = `
                 <div class="review-stars">${starsHtml}</div>
-                <div class="review-text">${review.text}</div>
-                <div class="review-author">${review.userName}</div>
+                <div class="review-text">${app.escapeHTML(review.text)}</div>
+                <div class="review-author">${app.escapeHTML(review.userName)}</div>
             `;
             container.appendChild(card);
         });
-
-
     },
 
     scrollReviews: function(direction) {
@@ -669,24 +862,50 @@ const app = {
         document.getElementById(`admin-section-${tab}`).classList.remove('hidden');
         if(tab === 'bookings') this.renderAdminCalendar();
         else if (tab === 'reviews') this.renderAdminReviews();
+        else if (tab === 'services') this.renderAdminServices();
         else this.renderAdminLists();
     },
 
     addSlot: function() {
-    const loc = document.getElementById('new-loc').value;
-    const date = document.getElementById('new-date').value;
-    const time = document.getElementById('new-time').value;
-    const adminPass = document.getElementById('admin-pass').value;
+        const loc = document.getElementById('new-loc').value;
+        const date = document.getElementById('new-date').value;
+        const startStr = document.getElementById('new-start-time').value; 
+        const endStr = document.getElementById('new-end-time').value; 
 
-    db.collection("appointments").add({
-        location: loc,
-        date: date,
-        time: time,
-        booked: false,
-        adminKey: adminPass,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(() => this.showNotification('Időpont létrehozva.', 'success'));
+        if(!date || !startStr || !endStr) return this.showNotification('Töltsd ki a dátumot és az órákat!', 'error');
+
+        const startH = parseInt(startStr.split(':')[0]);
+        const endH = parseInt(endStr.split(':')[0]);
+
+        if (isNaN(startH) || isNaN(endH) || startH > endH) {
+            return this.showNotification('Érvénytelen időintervallum!', 'error');
+        }
+
+        const batch = db.batch();
+
+        for(let h = startH; h <= endH; h++) {
+            let timeStr = h.toString().padStart(2, '0') + ':00';
+            let docRef = db.collection("appointments").doc();
+            
+            batch.set(docRef, {
+                location: loc,
+                date: date,
+                time: timeStr,
+                booked: false,
+                maxDuration: 60, 
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+
+        batch.commit().then(() => {
+            this.showNotification('Időpontok sikeresen generálva!', 'success');
+            document.getElementById('new-date').value = '';
+            document.getElementById('new-start-time').value = '';
+            document.getElementById('new-end-time').value = '';
+        }).catch(err => {
+            console.error("Hiba generáláskor: ", err);
+            this.showNotification('Hiba történt!', 'error');
+        });
     },
 
     deleteSlot: function(id) {
@@ -702,32 +921,57 @@ const app = {
             });
         }
     },
+    
+    // ÚJ FÜGGVÉNY: Teljes nap törlése
+    deleteDay: function(e, date, loc) {
+        e.stopPropagation(); // Ne nyissa le/csukja be az egész napot
+        
+        if(confirm(`Biztosan törlöd a(z) ${date} naphoz tartozó ÖSSZES (${loc}) időpontot? Ezzel minden foglalás elvész!`)) {
+            const slotsToDelete = this.data.filter(s => s.date === date && s.location === loc);
+            if (slotsToDelete.length === 0) return;
+
+            const batch = db.batch();
+            slotsToDelete.forEach(slot => {
+                const docRef = db.collection("appointments").doc(slot.id);
+                batch.delete(docRef);
+            });
+
+            batch.commit().then(() => {
+                this.showNotification('A nap összes időpontja törölve.', 'success');
+            }).catch(err => {
+                console.error("Hiba a nap törlésekor: ", err);
+                this.showNotification('Hiba történt a törlés során!', 'error');
+            });
+        }
+    },
 
     republishSlot: function(id) {
-    if(confirm('Biztosan felszabadítod ezt az időpontot? A vendég adatai törlődnek, és az időpont újra foglalható lesz.')) {
-        db.collection("appointments").doc(id).update({
-            booked: false,
-            clientName: firebase.firestore.FieldValue.delete(),
-            clientInsta: firebase.firestore.FieldValue.delete(),
-            clientPhone: firebase.firestore.FieldValue.delete(),
-            clientEmail: firebase.firestore.FieldValue.delete(),
-            clientNote: firebase.firestore.FieldValue.delete()
-        })
-        .then(() => {
-            this.showNotification('Időpont újra meghirdetve!', 'success');
+        if(confirm('Biztosan felszabadítod ezt az időpontot? A vendég adatai törlődnek, és az időpont újra foglalható lesz.')) {
+            db.collection("appointments").doc(id).update({
+                booked: false,
+                clientName: firebase.firestore.FieldValue.delete(),
+                clientInsta: firebase.firestore.FieldValue.delete(),
+                clientPhone: firebase.firestore.FieldValue.delete(),
+                clientEmail: firebase.firestore.FieldValue.delete(),
+                clientNote: firebase.firestore.FieldValue.delete(),
+                services: firebase.firestore.FieldValue.delete(),
+                totalDuration: firebase.firestore.FieldValue.delete()
+            })
+            .then(() => {
+                this.showNotification('Időpont újra meghirdetve!', 'success');
 
-            const label = document.getElementById('selected-date-label').innerText;
-            if(label.includes('Foglalások:')) {
-                const dateStr = label.split(': ')[1];
-                this.selectCalendarDay(dateStr);
-            }
-        })
-        .catch(err => {
-            console.error("Hiba az újrahirdetéskor:", err);
-            this.showNotification('Hiba történt!', 'error');
-        });
-    }
-},
+                const label = document.getElementById('selected-date-label').innerText;
+                if(label.includes('Foglalások:')) {
+                    const dateStr = label.split(': ')[1];
+                    this.selectCalendarDay(dateStr);
+                }
+            })
+            .catch(err => {
+                console.error("Hiba az újrahirdetéskor:", err);
+                this.showNotification('Hiba történt!', 'error');
+            });
+        }
+    },
 
     approveUser: function(id) {
         db.collection("users").doc(id).update({ status: 'approved' })
@@ -760,8 +1004,8 @@ const app = {
             div.style.borderLeftColor = 'var(--primary)';
             div.innerHTML = `
                 <div style="flex:1;">
-                    <strong style="color:white;">${r.userName}</strong> (${r.rating} ★)<br>
-                    <span style="color:#ccc; font-style:italic;">"${r.text}"</span>
+                    <strong style="color:white;">${app.escapeHTML(r.userName)}</strong> (${r.rating} ★)<br>
+                    <span style="color:#ccc; font-style:italic;">"${app.escapeHTML(r.text)}"</span>
                 </div>
                 <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
                     <button class="btn btn-outline" style="padding:5px 10px; font-size:0.8rem;" onclick="app.approveReviewNow('${r.id}')">Elfogad</button>
@@ -778,8 +1022,8 @@ const app = {
             div.style.borderLeftColor = 'var(--success)';
             div.innerHTML = `
                 <div style="flex:1;">
-                    <strong style="color:white;">${r.userName}</strong> (${r.rating} ★)<br>
-                    <span style="color:#ccc; font-style:italic;">"${r.text}"</span>
+                    <strong style="color:white;">${app.escapeHTML(r.userName)}</strong> (${r.rating} ★)<br>
+                    <span style="color:#ccc; font-style:italic;">"${app.escapeHTML(r.text)}"</span>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <span class="delete-btn" onclick="app.deleteReview('${r.id}')">Törlés</span>
@@ -906,7 +1150,6 @@ const app = {
             const dateStr = `${year}-${currentMonthStr}-${currentDayStr}`;
             const bookingCount = this.data.filter(slot => slot.date === dateStr && slot.booked).length;
 
-            // ÚJ RÉSZ: Mai nap azonosítása
             const realToday = new Date();
             const realTodayStr = `${realToday.getFullYear()}-${(realToday.getMonth() + 1).toString().padStart(2, '0')}-${realToday.getDate().toString().padStart(2, '0')}`;
 
@@ -966,22 +1209,55 @@ const app = {
             return;
         }
         dayBookings.forEach(slot => {
+            // --- ÚJ LOGIKA: 31 napos visszatekintés ---
+            const slotDate = new Date(slot.date);
+            const past31 = new Date(slot.date);
+            past31.setDate(slotDate.getDate() - 31);
+            
+            let recentBookingCount = 0;
+            if (slot.clientName) {
+                // Megszámoljuk, hány foglalása van a vendégnek az adott időpontot megelőző 31 napban
+                recentBookingCount = this.data.filter(s => {
+                    if (!s.booked || s.clientName !== slot.clientName) return false;
+                    const d = new Date(s.date);
+                    return d >= past31 && d <= slotDate;
+                }).length;
+            }
+            
+            // Kedvezményes 
+            let badgeHtml = '';
+            if (recentBookingCount >= 3) {
+                badgeHtml = '<span class="discount-badge">Kedvezményes</span>';
+            }
+            // --- ÚJ LOGIKA VÉGE ---
+
             const item = document.createElement('div');
             item.className = 'dashboard-item is-booked';
             item.style.display = 'block';
+            
+            // JAVÍTOTT HTML STRUKTÚRA ÉS A BADGE BEILLESZTÉSE
             item.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <div><strong style="color:var(--primary); font-size:1.1rem;">${slot.time}</strong>
-                    <div class="client-details">${slot.clientName} <br><a href="tel:${slot.clientPhone}" style="color:white;">${slot.clientPhone}</a></div></div>
-                    <span style="font-size:0.8rem; color:#aaa;">${slot.clientEmail || 'Nincs email'}</span> </div></div>
-                    <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-end;">
-                        <span class="delete-btn" onclick="app.deleteSlot('${slot.id}')">Törlés</span>
-                        <span class="modify-btn" onclick="app.openModifyView('${slot.id}')">Módosítás</span>
-                        <span class="republish-btn" onclick="app.republishSlot('${slot.id}')">Újrahirdetés</span>
+                    <div>
+                        <strong style="color:var(--primary); font-size:1.1rem;">${slot.time}</strong>
+                        <div class="client-details">
+                            ${app.escapeHTML(slot.clientName)} <br>
+                            <a href="tel:${slot.clientPhone}" style="color:white;">${app.escapeHTML(slot.clientPhone)}</a>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap: 4px;">
+                        <span style="font-size:0.8rem; color:#aaa;">${app.escapeHTML(slot.clientEmail) || 'Nincs email'}</span> 
+                        ${badgeHtml}
                     </div>
                 </div>
-                ${slot.clientNote ? `<div class="client-note">"${slot.clientNote}"</div>` : ''}
+                <div style="display:flex; flex-direction:column; gap:3px; align-items:flex-end; margin-top: 10px;">
+                    <span class="delete-btn" onclick="app.deleteSlot('${slot.id}')">Törlés</span>
+                    <span class="modify-btn" onclick="app.openModifyView('${slot.id}')">Módosítás</span>
+                    <span class="republish-btn" onclick="app.republishSlot('${slot.id}')">Újrahirdetés</span>
+                </div>
+                ${slot.clientNote ? `<div class="client-note" style="margin-top: 8px;">"${app.escapeHTML(slot.clientNote)}"</div>` : ''}
             `;
+            
             if(slot.location === 'Fehérgyarmat') listFeher.appendChild(item);
             else listDebrecen.appendChild(item);
         });
@@ -1004,7 +1280,8 @@ const app = {
             else counts.md++;
         });
 
-        const renderLocationGroups = (container, locationGroups) => {
+        // Átadtam a lokáció nevét (locName) hogy a törlés függvény tudja
+        const renderLocationGroups = (container, locationGroups, locName) => {
             if (!container) return;
             const dates = Object.keys(locationGroups).sort();
             if (dates.length === 0) {
@@ -1025,9 +1302,13 @@ const app = {
                 const header = document.createElement('div');
                 header.className = 'day-header';
                 header.style.cursor = 'pointer';
+                // ÚJ NAP TÖRLÉSE GOMB A FEJLÉCBE
                 header.innerHTML = `
                     <span>${formattedDate} – ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}</span>
-                    <span style="font-size:0.8rem; color:#888;">${slots.length} időpont${bookedCount > 0 ? ` · <span style="color:var(--danger)">${bookedCount} foglalt</span>` : ''}</span>
+                    <div style="display:flex; align-items:center; gap: 15px;">
+                        <span style="font-size:0.8rem; color:#888;">${slots.length} időpont${bookedCount > 0 ? ` · <span style="color:var(--danger)">${bookedCount} foglalt</span>` : ''}</span>
+                        <button class="delete-day-btn" onclick="app.deleteDay(event, '${date}', '${locName}')">Nap törlése</button>
+                    </div>
                 `;
 
                 const slotsDiv = document.createElement('div');
@@ -1042,8 +1323,8 @@ const app = {
                         <div>
                             <span style="color:#fff; font-weight:bold;">${slot.time}</span>
                             ${slot.booked
-                                ? `<span style="color:var(--danger); margin-left:8px; font-size:0.8rem;">[FOGLALT – ${slot.clientName || ''}]</span>`
-                                : '<span style="color:#777; margin-left:8px; font-size:0.8rem;">[SZABAD]</span>'
+                                ? `<span style="color:var(--danger); margin-left:8px; font-size:0.8rem;">[FOGLALT – ${app.escapeHTML(slot.clientName || '')}]</span>`
+                                : `<span style="color:#777; margin-left:8px; font-size:0.8rem;">[SZABAD${slot.maxDuration && slot.maxDuration < 60 ? ` - Max: ${slot.maxDuration}p` : ''}]</span>`
                             }
                         </div>
                         <div class="delete-btn" onclick="app.deleteSlot('${slot.id}')">Törlés</div>
@@ -1063,8 +1344,8 @@ const app = {
             });
         };
 
-        renderLocationGroups(listFeher, groups['Fehérgyarmat']);
-        renderLocationGroups(listDebrecen, groups['Debrecen']);
+        renderLocationGroups(listFeher, groups['Fehérgyarmat'], 'Fehérgyarmat');
+        renderLocationGroups(listDebrecen, groups['Debrecen'], 'Debrecen');
 
         document.getElementById('count-manage-feher').innerText = counts.mf;
         document.getElementById('count-manage-debrecen').innerText = counts.md;
@@ -1078,7 +1359,7 @@ const app = {
                 const div = document.createElement('div');
                 div.className = 'dashboard-item';
                 div.style.borderLeftColor = 'var(--primary)';
-                div.innerHTML = `<div><strong style="color:white;">${u.name}</strong> <br><span style="color:var(--primary);">${u.insta}</span></div><div style="display:flex; gap:10px;"><button class="btn" style="padding:5px 10px; font-size:0.8rem;" onclick="app.approveUser('${u.id}')">Elfogadás</button><span class="delete-btn" onclick="app.deleteUser('${u.id}')">X</span></div>`;
+                div.innerHTML = `<div><strong style="color:white;">${app.escapeHTML(u.name)}</strong> <br><span style="color:var(--primary);">${app.escapeHTML(u.insta)}</span></div><div style="display:flex; gap:10px;"><button class="btn" style="padding:5px 10px; font-size:0.8rem;" onclick="app.approveUser('${u.id}')">Elfogadás</button><span class="delete-btn" onclick="app.deleteUser('${u.id}')">X</span></div>`;
                 pendingList.appendChild(div);
             });
         }
@@ -1088,14 +1369,38 @@ const app = {
             approvedList.innerHTML = '';
             const approvedUsers = this.users.filter(u => u.status === 'approved');
             if(document.getElementById('count-approved-users')) document.getElementById('count-approved-users').innerText = approvedUsers.length;
-            approvedUsers.forEach(u => {
+
+            const term = this.normalizeSearchText(this.userSearchTerm);
+            const visibleUsers = term
+                ? approvedUsers.filter(u => this.normalizeSearchText(u.name).includes(term))
+                : approvedUsers;
+
+            if(term && visibleUsers.length === 0) {
+                approvedList.innerHTML = '<p style="color:#666; font-style:italic;">Nincs a keresésnek megfelelő vendég.</p>';
+            }
+
+            visibleUsers.forEach(u => {
                 const div = document.createElement('div');
                 div.className = 'dashboard-item';
                 div.style.borderLeftColor = 'var(--success)';
-                div.innerHTML = `<div><strong style="color:white;">${u.name}</strong> <br><span style="color:#777;">${u.insta}</span></div><span class="delete-btn" onclick="app.deleteUser('${u.id}')">Törlés</span>`;
+                div.innerHTML = `<div><strong style="color:white;">${app.escapeHTML(u.name)}</strong> <br><span style="color:#777;">${app.escapeHTML(u.insta)}</span></div><span class="delete-btn" onclick="app.deleteUser('${u.id}')">Törlés</span>`;
                 approvedList.appendChild(div);
             });
         }
+    },
+
+    normalizeSearchText: function(text) {
+        return (text || '')
+            .toString()
+            .trim()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '');
+    },
+
+    filterApprovedUsers: function(value) {
+        this.userSearchTerm = value;
+        this.renderAdminLists();
     },
 
     renderPublicSlots: function() {
@@ -1151,7 +1456,14 @@ const app = {
                 const btn = document.createElement('div');
                 btn.className = 'time-slot';
                 btn.style.margin = "0";
-                btn.innerHTML = `<strong>${slot.time}</strong><br><span style="font-size:0.7rem; color:var(--primary)">FOGLALÁS</span>`;
+                
+                // MÓDOSÍTÁS: Abszolút pozicionált, fekete 90% hátteres jelvény a tetején
+                let extraBadge = '';
+                if (slot.maxDuration && slot.maxDuration < 60) {
+                    extraBadge = `<div class="slot-max-badge">Max: ${slot.maxDuration} perc</div>`;
+                }
+
+                btn.innerHTML = `${extraBadge}<strong>${slot.time}</strong><br><span style="font-size:0.7rem; color:var(--primary)">FOGLALÁS</span>`;
                 btn.onclick = (e) => {
                     e.stopPropagation();
                     app.startBooking(slot.id);
