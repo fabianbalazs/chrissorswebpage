@@ -443,8 +443,10 @@
 
             <div id="admin-section-manage">
                 <div class="dashboard-box">
-                    <h3 class="box-header">Új időpont hirdetése (Óránkénti generálás)</h3>
-                    <!-- ÚJ: Intervallum bekérése -->
+                    <!-- Rejtett funkció aktiválása a címsorra kattintva -->
+                    <h3 class="box-header" style="cursor: pointer; user-select: none;" onclick="document.getElementById('hidden-single-slot-panel').classList.toggle('hidden')" title="Kattints ide a titkos panelhez!">Új időpont hirdetése (Óránkénti generálás) ↓ </h3>
+                    
+                    <!-- Jelenlegi intervallum bekérése -->
                     <div class="add-slot-grid">
                         <select id="new-loc">
                             <option value="Fehérgyarmat">Fehérgyarmat</option>
@@ -454,6 +456,20 @@
                         <input type="time" id="new-start-time" title="Kezdés">
                         <input type="time" id="new-end-time" title="Befejezés">
                         <button class="btn" onclick="app.addSlot()">Létrehozás</button>
+                    </div>
+
+                    <!-- REJTETT SZEKCIÓ (Egyedi időpont) -->
+                    <div id="hidden-single-slot-panel" class="hidden" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--bg-4);">
+                        <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 10px; font-style: italic;">Egyetlen konkrét időpont hozzáadása</p>
+                        <div class="add-slot-grid">
+                            <select id="single-loc">
+                                <option value="Fehérgyarmat">Fehérgyarmat</option>
+                                <option value="Debrecen">Debrecen</option>
+                            </select>
+                            <input type="date" id="single-date">
+                            <input type="time" id="single-time" title="Pontos időpont">
+                            <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="app.addSingleSlot()">Hozzáadás</button>
+                        </div>
                     </div>
                 </div>
                 <h3 style="margin-bottom:10px;">Aktív időpontok</h3>

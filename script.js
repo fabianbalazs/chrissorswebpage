@@ -908,6 +908,30 @@ const app = {
         });
     },
 
+    addSingleSlot: function() {
+        const loc = document.getElementById('single-loc').value;
+        const date = document.getElementById('single-date').value;
+        const time = document.getElementById('single-time').value;
+
+        if(!date || !time) return this.showNotification('Töltsd ki a dátumot és az időpontot!', 'error');
+
+        db.collection("appointments").add({
+            location: loc,
+            date: date,
+            time: time,
+            booked: false,
+            maxDuration: 60, 
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            this.showNotification('Egyedi időpont sikeresen hozzáadva!', 'success');
+
+            document.getElementById('single-time').value = '';
+        }).catch(err => {
+            console.error("Hiba generáláskor: ", err);
+            this.showNotification('Hiba történt!', 'error');
+        });
+    },
+
     deleteSlot: function(id) {
         if(confirm('Törlöd az időpontot?')) {
             db.collection("appointments").doc(id).delete()
@@ -926,7 +950,7 @@ const app = {
     deleteDay: function(e, date, loc) {
         e.stopPropagation(); // Ne nyissa le/csukja be az egész napot
         
-        if(confirm(`Biztosan törlöd a(z) ${date} naphoz tartozó ÖSSZES (${loc}) időpontot? Ezzel minden foglalás elvész!`)) {
+        if(confirm(`Biztosan törlöd a(z) ${date} naphoz tartozó összes ${loc}i időpontot? Ezzel minden foglalás elvész!`)) {
             const slotsToDelete = this.data.filter(s => s.date === date && s.location === loc);
             if (slotsToDelete.length === 0) return;
 
