@@ -12,6 +12,7 @@ const db = firebase.firestore();
 
 const app = {
     data: [],
+    myAppointments: [],
     users: [],
     reviews: [],
     services: [], 
@@ -98,11 +99,24 @@ const app = {
                             if (userData.status === 'approved') {
                                 this.activeUser = userData;
                                 
-                                db.collection("appointments").onSnapshot((querySnapshot) => {
+                                // 1. LEKÉRDEZÉS: Csak a szabad időpontok (ebben nincs személyes adat)
+                                db.collection("appointments").where("booked", "==", false).onSnapshot((querySnapshot) => {
                                     this.data = [];
                                     querySnapshot.forEach((doc) => { this.data.push({ id: doc.id, ...doc.data() }); });
                                     this.renderPublicSlots();
-                                    if(this.activeUser) { this.renderUserBookings(); this.renderHeroBookings(); }
+                                });
+
+                                // 2. LEKÉRDEZÉS: Csak a saját, lefoglalt időpontok
+                                db.collection("appointments")
+                                .where("booked", "==", true)
+                                .where("clientUid", "==", user.uid)
+                                .onSnapshot((querySnapshot) => {
+                                    this.myAppointments = [];
+                                    querySnapshot.forEach((doc) => { this.myAppointments.push({ id: doc.id, ...doc.data() }); });
+                                    if(this.activeUser) { 
+                                        this.renderUserBookings(); 
+                                        this.renderHeroBookings(); 
+                                    }
                                 });
                                 
                                 if (!document.getElementById('view-home').classList.contains('hidden')) {
@@ -162,11 +176,9 @@ const app = {
         userInfo.innerHTML = `Üdv, <strong style="color:var(--primary); font-size:1.0rem;">${this.activeUser.name}</strong>`;
         list.innerHTML = '';
 
-        const myBookings = this.data.filter(slot =>
-            slot.booked &&
-            slot.clientName === this.activeUser.name &&
-            slot.clientInsta === this.activeUser.insta
-        ).sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+        const myBookings = this.myAppointments.sort((a,b) => 
+            new Date(`${a.date}T${a.time}:00`) - new Date(`${b.date}T${b.time}:00`)
+        );
 
         const now = new Date();
         const upcoming = myBookings.filter(slot => {
@@ -199,11 +211,9 @@ const app = {
             return;
         }
 
-        const myBookings = this.data.filter(slot =>
-            slot.booked &&
-            slot.clientName === this.activeUser.name &&
-            slot.clientInsta === this.activeUser.insta
-        ).sort((a,b) => new Date(a.date + ' ' + a.time) - new Date(b.date + ' ' + b.time));
+        const myBookings = this.myAppointments.sort((a,b) => 
+            new Date(`${a.date}T${a.time}:00`) - new Date(`${b.date}T${b.time}:00`)
+        );
 
         const now = new Date();
         const upcoming = myBookings.filter(slot => {
@@ -626,6 +636,7 @@ const app = {
 
             let updatePromise = db.collection("appointments").doc(this.bookingSlotId).update({
                 booked: true,
+                clientUid: firebase.auth().currentUser.uid, 
                 clientName: this.activeUser.name,
                 clientInsta: this.activeUser.insta,
                 clientPhone: cleanPhone,
