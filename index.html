@@ -1,64 +1,125 @@
 <!DOCTYPE html>
-<html lang="hu">
+<html lang="hu" class="preload-lock">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chrissors - Fodrászat & Borbély</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="logo png.webp">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="image" href="kepek/logof.webp" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="kepek/logo.webp">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 </head>
 <body>
 
-    <header>
-        <img src="logo png.webp" alt="logo" class="logo" onclick="app.logoutUser()">
+    <div id="preloader">
+        <div class="preloader-glow" aria-hidden="true"></div>
+        <div class="preloader-logo">
+            <div class="preloader-logo-gold"></div>
+        </div>
+    </div>
 
-        <div class="hamburger" onclick="app.toggleDrawer()">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
+    <div class="noise-overlay" aria-hidden="true"></div>
+    <div class="ambient-glow ambient-glow--a" aria-hidden="true"></div>
+    <div class="ambient-glow ambient-glow--b" aria-hidden="true"></div>
+    <div class="grid-overlay" aria-hidden="true"></div>
+
+    <header>
+        <div class="header-left">
+            <img src="kepek/logo.webp" alt="logo" class="logo" onclick="app.logoutUser()">
+            <span class="header-wordmark">CHRISSORS<span class="header-wordmark-dot">.</span></span>
+        </div>
+
+        <nav class="main-nav">
+            <a class="nav-link" onclick="app.showRegister()">Regisztráció</a>
+            <a class="nav-link" onclick="smoothScrollTo('gallery-ribbon', 1200)">Galéria</a>
+            <a class="nav-link" href="arak.html">Árlista</a>
+            <a class="nav-link" onclick="smoothScrollTo('faq-section', 1200)">GY.I.K</a>
+
+            <div class="nav-dropdown">
+                <button type="button" class="nav-link nav-link--drop" id="services-nav-btn" onclick="toggleServicesNav(event)">
+                    Szolgáltatások
+                    <svg class="nav-drop-arrow" viewBox="0 0 12 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <div class="nav-dropdown-panel" id="services-nav-panel">
+            <div class="nav-mega">
+                <div class="nav-mega-grid">
+                    <a class="nav-mega-item" onclick="app.selectLocation('Fehérgyarmat'); document.getElementById('booking-section').scrollIntoView({behavior:'smooth'})">
+                        <span class="nav-mega-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 5l12 12M18 5L9.5 13.5M6 19a2 2 0 100-4 2 2 0 000 4zM18 19a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="nav-mega-text">
+                            <span class="nav-mega-title">Hajvágás</span>
+                            <span class="nav-mega-desc">Fehérgyarmat &amp; Debrecen</span>
+                        </span>
+                    </a>
+                    <a class="nav-mega-item" onclick="smoothScrollTo('gallery-ribbon', 1200)">
+                        <span class="nav-mega-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="10" r="1.6" stroke="currentColor" stroke-width="1.4"/><path d="M21 16l-5-5-4 4-3-3-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="nav-mega-text">
+                            <span class="nav-mega-title">Munkáim</span>
+                            <span class="nav-mega-desc">Nézd meg a galériát</span>
+                        </span>
+                    </a>
+                    <a class="nav-mega-item" onclick="app.selectLocation('Debrecen'); document.getElementById('booking-section').scrollIntoView({behavior:'smooth'})">
+                        <span class="nav-mega-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        </span>
+                        <span class="nav-mega-text">
+                            <span class="nav-mega-title">Haj + Design + Szakáll</span>
+                            <span class="nav-mega-desc">Teljes körű csomag</span>
+                        </span>
+                    </a>
+                    <a class="nav-mega-item" onclick="app.showUserLogin()">
+                        <span class="nav-mega-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M4 9h16M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        </span>
+                        <span class="nav-mega-text">
+                            <span class="nav-mega-title">Online időpontfoglalás</span>
+                            <span class="nav-mega-desc">Foglalj pár kattintással</span>
+                        </span>
+                    </a>
+                    <a class="nav-mega-item" onclick="document.getElementById('gallery-ribbon').scrollIntoView({behavior:'smooth'})">
+                        <span class="nav-mega-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12c0-4 2-8 8-8s8 4 8 8-2 8-4 8c-1 0-1-2-2-2s-1 2-2 2-1-2-2-2-1 2-2 2c-2 0-4-4-4-8z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </span>
+                        <span class="nav-mega-text">
+                            <span class="nav-mega-title">Szakállformázás</span>
+                            <span class="nav-mega-desc">Precíz vonalvezetés</span>
+                        </span>
+                    </a>
+                    <a class="nav-mega-item" onclick="document.getElementById('faq-section').scrollIntoView({behavior:'smooth'})">
+                        <span class="nav-mega-icon">
+                            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.6.6-1.5 1-1.5 2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/></svg>
+                        </span>
+                        <span class="nav-mega-text">
+                            <span class="nav-mega-title">Kérdésed van?</span>
+                            <span class="nav-mega-desc" onclick="smoothScrollTo('faq-section', 1200)">Nézd meg a GY.I.K-et vagy írj egy emailt</span>
+                        </span>
+                    </a>
+                </div>
+
+                <div class="nav-mega-promo">
+                    <span class="nav-mega-promo-tag">Fehérgyarmat · Debrecen</span>
+                    <h4>Foglalj most<br>időpontot.</h4>
+                    <p>Válassz helyszínt, szolgáltatást és időpontot — az egész nem tart tovább egy percnél.</p>
+                    <button type="button" class="btn nav-mega-promo-btn" onclick="closeServicesNav(); app.showUserLogin()">Ugrás a foglaláshoz →</button>
+                </div>
+            </div>
         </div>
     </header>
 
-    <div id="side-drawer-overlay" class="drawer-overlay hidden" onclick="app.toggleDrawer()"></div>
-    <div id="side-drawer" class="side-drawer">
-        <div class="drawer-header">
-            <h3 style="color:var(--primary); margin:0;">Menü</h3>
-            <button class="close-drawer" onclick="app.toggleDrawer()">&times;</button>
-        </div>
-
-        <div id="drawer-user-section">
-            <div id="drawer-user-info" style="margin-bottom: 20px; color: white; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                <p style="color:#888; font-style:italic;">Nincs bejelentkezett felhasználó.</p>
-            </div>
-
-            <h4 style="color:var(--text-gray); margin-bottom:15px; font-size: 0.9rem;">Foglalt időpontjaim</h4>
-            <div id="drawer-appointments-list">
-                </div>
-        </div>
-
-        <div class="drawer-footer-links">
-            <a href="arak.html" target="_blank" class="drawer-link">
-                Árlista
-            </a>
-            <a href="https://www.instagram.com/itschrissors?igsh=MTEzMHhleDFzcGVybg==" class="drawer-link">
-                Instagram
-            </a>
-
-
-            <div id="drawer-logout-btn" class="drawer-link hidden" style="color: var(--danger);" onclick="app.logoutUser(); app.toggleDrawer()">
-                Kijelentkezés
-            </div>
-        </div>
-    </div>
-
     <div id="toast-container"></div>
-
-    <div id="price-list-popup" class="price-list-popup hidden">
-        <button class="price-list-btn" onclick="window.open('arak.html', '_blank')">Árlista</button>
-    </div>
 
     <div id="review-popup-overlay" class="review-popup-overlay hidden" onclick="app.closeReviewPopup()">
         <div class="review-popup" onclick="event.stopPropagation()">
@@ -73,7 +134,8 @@
 
     <div id="view-home">
         <div class="hero">
-            <img src="logo png.webp" alt="logo" class="logo2">
+            <span class="hero-eyebrow">FEHÉRGYARMAT · DEBRECEN</span>
+            <img src="kepek/logo.webp" alt="logo" class="logo2">
             <p style="font-weight: bold; font-size: 21px;">Prémium hajvágás Krisztiántól.</p>
 
             <div id="hero-user-appointments" class="hero-appointments hidden"></div>
@@ -81,14 +143,18 @@
             <div id="auth-buttons">
                 <p style="margin-top:-15px; margin-bottom:30px; color:#ccc; font-size: 12px;">Az időpontfoglalás regisztrációhoz kötött.</p>
                 <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
-                    <button class="btn" onclick="app.showUserLogin()">Már van fiókom</button>
-                    <button class="btn btn-outline" onclick="app.showRegister()">Előregisztráció</button>
+                    <button class="btn" onclick="app.showUserLogin()">Bejelentkezés</button>
+                    <button class="btn btn-outline" onclick="app.showRegister()">Regisztráció</button>
                 </div>
             </div>
 
             <button id="btn-go-booking" class="btn hidden" onclick="document.getElementById('booking-section').scrollIntoView({behavior: 'smooth'})">
                 Ugrás az időpontokhoz
             </button>
+
+            <div class="scroll-cue" aria-hidden="true">
+                <span></span>
+            </div>
         </div>
 
         <div class="how-section" id="how-section">
@@ -146,16 +212,24 @@
                     <p class="how-step-desc">Jelenj meg a választott időpontban. A többi Krisztián dolga – te csak dőlj hátra.</p>
                 </div>
             </div>
+
+            <div class="how-mobile-nav">
+                <div class="how-progress"><div class="how-progress-fill" id="how-progress-fill"></div></div>
+            </div>
         </div>
 
         <div class="intro-section" id="intor-section-wrapper">
+            <span class="eyebrow">FILOZÓFIA</span>
             <h2 class="section-title" style="margin-bottom: 15px;">Több, mint egy hajvágás</h2>
             <p class="intro-text">
                 Minden frizura egyedi, ahogy minden vendég is. A <b class="cb">Chrissors</b>-nál a maximális precizitásra, a részletekre és a prémium minőségre törekszem. Célom, hogy a székből felállva a legjobb formádat hozd. Nézd meg a legutóbbi munkáimat!
             </p>
         </div>
 
+        <div class="section-divider" aria-hidden="true"><span></span></div>
+
         <div class="gallery-ribbon-container" id="gallery-ribbon">
+            <span class="eyebrow eyebrow--center">GALÉRIA</span>
             <div class="gallery-track" id="gallery-track">
                 <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1" data-index="0">
                 <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2" data-index="1">
@@ -202,7 +276,6 @@
             <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">&#10095;</button>
         </div>
 
-
         <div class="stats-section" id="stats-section">
             <div class="stats-inner">
                 <div class="stat-item">
@@ -223,6 +296,7 @@
         </div>
 
         <div id="reviews-section-wrapper" class="reviews-section" style="display: none;">
+            <span class="eyebrow eyebrow--center">VÉLEMÉNYEK</span>
             <h2 class="section-title">Ti mondtátok...</h2>
             <p class="intro-text-alt">
                 Minden visszajelzés fontos számomra. Köszönöm nektek a bizalmat!
@@ -248,6 +322,7 @@
         </div>
 
         <div id="booking-section" class="container hidden">
+            <span class="eyebrow eyebrow--center">FOGLALÁS</span>
             <h2 class="section-title2">Válassz helyszínt és időpontot</h2>
 
             <div class="location-selector">
@@ -259,6 +334,58 @@
                 <p style="text-align:center; width:100%; color:#666;">Adatok betöltése...</p>
             </div>
             <p id="no-slots-msg" class="no-slots-text">Jelenleg nincs szabad időpont ehhez a helyszínhez.</p>
+        </div>
+
+        <div class="faq-section" id="faq-section">
+            <div class="faq-intro">
+                <span class="eyebrow">GY.I.K</span>
+                <h2 class="section-title faq-intro-title">Gyakran ismételt kérdések</h2>
+                <p class="faq-intro-text">Összegyűjtöttük a leggyakoribb kérdéseket a foglalással, helyszínekkel és időpontokkal kapcsolatban.</p>
+                <a class="faq-intro-cta" href="https://www.instagram.com/itschrissors?igsh=MTEzMHhleDFzcGVybg==" target="_blank">
+                    <span class="faq-intro-cta-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.6.6-1.5 1-1.5 2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/></svg>
+                    </span>
+                    Van még kérdésed? Kattints ide
+                </a>
+            </div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button type="button" class="faq-q" onclick="toggleFaq(this)">
+                        Hogyan tudok időpontot foglalni?
+                        <span class="faq-q-icon"></span>
+                    </button>
+                    <div class="faq-answer-wrap"><div class="faq-answer">Regisztrálj a fenti "Regisztráció" gombbal, majd Krisztián jóváhagyása után be tudsz jelentkezni és kiválaszthatod a neked megfelelő helyszínt és időpontot.</div></div>
+                </div>
+                <div class="faq-item">
+                    <button type="button" class="faq-q" onclick="toggleFaq(this)">
+                        Módosíthatom vagy lemondhatom a foglalt időpontomat?
+                        <span class="faq-q-icon"></span>
+                    </button>
+                    <div class="faq-answer-wrap"><div class="faq-answer">Igen, bejelentkezés után, ha esetleg nem jó számodra az időpont, írj egy üzenetet Instagramon.</div></div>
+                </div>
+                <div class="faq-item">
+                    <button type="button" class="faq-q" onclick="toggleFaq(this)">
+                        Melyik helyszíneken vagy elérhető?
+                        <span class="faq-q-icon"></span>
+                    </button>
+                    <div class="faq-answer-wrap"><div class="faq-answer">Jelenleg Fehérgyarmaton és Debrecenben, a foglalás során választhatsz a két helyszín között.</div></div>
+                </div>
+                <div class="faq-item">
+                    <button type="button" class="faq-q" onclick="toggleFaq(this)">
+                        Mennyi ideig tart egy hajvágás?
+                        <span class="faq-q-icon"></span>
+                    </button>
+                    <div class="faq-answer-wrap"><div class="faq-answer">A választott szolgáltatástól függ, ez a foglalási felületen a szolgáltatás kiválasztásakor mindig látható lesz.</div></div>
+                </div>
+                <div class="faq-item">
+                    <button type="button" class="faq-q" onclick="toggleFaq(this)">
+                        Hogyan tudok véleményt írni?
+                        <span class="faq-q-icon"></span>
+                    </button>
+                    <div class="faq-answer-wrap"><div class="faq-answer">Egy lezárt időpont után automatikusan felajánljuk az értékelés lehetőségét, de bejelentkezve bármikor is megteheted a menüből.</div></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -329,7 +456,13 @@
             </div>
             <div class="form-group">
                 <label>Jelszó</label>
-                <input type="password" id="reg-pass" placeholder="Jelszó megadása">
+                <div class="password-wrap">
+                    <input type="password" id="reg-pass" placeholder="Jelszó megadása">
+                    <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Jelszó megjelenítése">
+                        <svg class="eye-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.6"/></svg>
+                        <svg class="eye-closed" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10.6 6.1A9.9 9.9 0 0112 6c6.5 0 10 6 10 6a17 17 0 01-3.2 3.9M6.6 7.3A16.8 16.8 0 002 12s3.5 6.5 10 6.5c1.4 0 2.6-.3 3.7-.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="form-group">
                 <label style="font-size: 0.8rem; display: flex; gap: 10px; align-items: start; cursor: pointer;">
@@ -339,7 +472,15 @@
             </div>
 
             <button class="btn" style="width:100%" onclick="app.submitRegistration()">Regisztráció Küldése</button>
-            <p class="back-link" onclick="app.showHome()">Vissza</p>
+
+            <div class="form-links">
+                <span class="form-link" onclick="app.showUserLogin()">Van már fiókom</span>
+                <span class="form-links-sep"></span>
+                <span class="form-link form-link--back" onclick="app.showHome()">
+                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Vissza a főoldalra
+                </span>
+            </div>
         </div>
     </div>
 
@@ -354,12 +495,25 @@
             </div>
             <div class="form-group">
                 <label>Jelszó</label>
-                <input type="password" id="login-pass" placeholder="Jelszó">
+                <div class="password-wrap">
+                    <input type="password" id="login-pass" placeholder="Jelszó">
+                    <button type="button" class="password-toggle" onclick="togglePassword(this)" aria-label="Jelszó megjelenítése">
+                        <svg class="eye-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="2.8" stroke="currentColor" stroke-width="1.6"/></svg>
+                        <svg class="eye-closed" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3l18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M10.6 6.1A9.9 9.9 0 0112 6c6.5 0 10 6 10 6a17 17 0 01-3.2 3.9M6.6 7.3A16.8 16.8 0 002 12s3.5 6.5 10 6.5c1.4 0 2.6-.3 3.7-.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                    </button>
+                </div>
             </div>
 
             <button class="btn" style="width:100%" onclick="app.userLogin()">Belépés</button>
-            <p class="back-link" style="margin-top:14px;" onclick="app.showForgotPassword()">Elfelejtettem a jelszavam</p>
-            <p class="back-link" style="margin-top:6px;" onclick="app.showHome()">Vissza</p>
+
+            <div class="form-links">
+                <span class="form-link" onclick="app.showForgotPassword()">Elfelejtettem a jelszavam</span>
+                <span class="form-links-sep"></span>
+                <span class="form-link form-link--back" onclick="app.showHome()">
+                    <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 12L6 8l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Vissza a főoldalra
+                </span>
+            </div>
         </div>
     </div>
 
@@ -428,7 +582,7 @@
         <div class="container">
             <div class="admin-header">
                 <h2 style="color:white;">Adminisztráció</h2>
-                <button class="btn btn-outline" onclick="app.logout()">Kilépés</button>
+                <button class="btn btn-back-outline" onclick="app.logout()">Kilépés</button>
             </div>
 
             <!-- ÚJ: Szolgáltatások fül hozzáadva -->
@@ -510,6 +664,11 @@
                     <div id="calendar-day-details" class="details-sidebar hidden">
                         <h3 id="selected-date-label" style="text-align:center; color:white; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 10px;"></h3>
 
+                        <div id="bulk-message-container" style="text-align: center; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 15px; display: none;">
+                            <p style="font-size: 0.75rem; color: var(--text-gray); margin-bottom: 10px;">Emlékeztető a napi vendégeknek:</p>
+                            <button class="btn btn-outline" style="padding: 6px 16px; font-size: 0.8rem; border-color: var(--primary); color: var(--primary);" onclick="app.sendBulkSMS()">Csoportos SMS küldése</button>
+                        </div>
+
                         <div class="split-view-container">
                             <div class="split-column">
                                 <h4 style="color:var(--primary); text-align:center; margin-bottom:10px; border-bottom:1px solid var(--primary); padding-bottom:5px;">Fehérgyarmat</h4>
@@ -581,129 +740,37 @@
     </div>
 
     <footer>
-        <div class="footer-content">
-            <div class="footer-left">
+        <div class="footer-inner">
+            <div class="footer-brand">
                 <span class="footer-logo">Chrissors'</span>
-                <p class="footer-desc">Prémium minőség, stílus és elegancia.</p>
-                <div style="margin-top: 5px; font-size: 0.8rem;">
-                    <a href="impresszum.html" class="social-link">Impresszum</a> |
-                    <a href="adatkezeles.html" class="social-link">Adatkezelés</a> |
-                    <a href="aszf.html" class="social-link">ÁSZF</a>
-                </div>
+                <p class="footer-desc">Fehérgyarmat &amp; Debrecen</p>
             </div>
-            <div class="footer-center">
-                <p>&copy; 2026 Chrissors'. Minden jog fenntartva.</p>
-            </div>
-            <div class="footer-right"></div>
+
+            <nav class="footer-nav">
+                <a href="impresszum.html">Impresszum</a>
+                <a href="adatkezeles.html">Adatkezelés</a>
+                <a href="aszf.html">ÁSZF</a>
+                <a href="https://www.instagram.com/itschrissors?igsh=MTEzMHhleDFzcGVybg==" target="_blank" class="footer-ig">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"/></svg>
+                    Instagram
+                </a>
+            </nav>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 Chrissors'. Minden jog fenntartva.</span>
         </div>
     </footer>
 
-    <script src="script.js"></script>
-    <script>
-    (function () {
-        if (!('IntersectionObserver' in window)) {
-            document.querySelectorAll('.reveal, .form-box, .time-slot').forEach(function(el) {
-                el.classList.add('visible');
-            });
-            return;
-        }
+    <div id="cookie-banner" class="cookie-banner hidden">
+        <div class="cookie-text">
+            <strong>Sütiket használunk</strong>
+            <p>Az oldal működéséhez és a jobb élményhez sütiket használunk. Részletek az <a href="adatkezeles.html" target="_blank">Adatkezelési Tájékoztatóban</a>.</p>
+        </div>
+        <div class="cookie-actions">
+            <button type="button" class="btn cookie-accept" onclick="acceptCookies()">Rendben</button>
+        </div>
+    </div>
 
-        var revealObserver = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    revealObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.12 });
-
-        var revealSelectors = [
-            '.logo2', '.hero p', '#auth-buttons', '#btn-go-booking',
-            '.stat-item',
-            '.intro-section', '.intro-section h2', '.intro-section p',
-            '.gallery-ribbon-container',
-            '.reviews-section', '.reviews-section h2', '.review-card',
-            '#booking-section h2', '.location-selector', '.day-group',
-            'footer',
-            '.form-box',
-            '.dashboard-box', '.accordion-btn', '.dashboard-item',
-        ];
-
-        revealSelectors.forEach(function(sel) {
-            document.querySelectorAll(sel).forEach(function(el) {
-                el.classList.add('reveal');
-                revealObserver.observe(el);
-            });
-        });
-
-        ['.logo2', '.hero p', '#auth-buttons', '#btn-go-booking'].forEach(function(sel, i) {
-            var el = document.querySelector(sel);
-            if (el) setTimeout(function() { el.classList.add('visible'); }, 100 + i * 180);
-        });
-
-        var easeOut = function(t) { return 1 - Math.pow(1 - t, 3); };
-
-        function animateCounter(el) {
-            var target = parseInt(el.dataset.target, 10);
-            var suffix = el.dataset.suffix || '';
-            var duration = target >= 100 ? 1800 : 1200;
-            var start = performance.now();
-            function tick(now) {
-                var progress = Math.min((now - start) / duration, 1);
-                el.textContent = Math.round(easeOut(progress) * target) + suffix;
-                if (progress < 1) requestAnimationFrame(tick);
-            }
-            requestAnimationFrame(tick);
-        }
-
-        var statsObserver = new IntersectionObserver(function(entries) {
-            entries.forEach(function(entry) {
-                if (entry.isIntersecting) {
-                    entry.target.querySelectorAll('.stat-num').forEach(function(el, i) {
-                        setTimeout(function() { animateCounter(el); }, i * 200);
-                    });
-                    statsObserver.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.4 });
-
-        var statsSection = document.getElementById('stats-section');
-        if (statsSection) statsObserver.observe(statsSection);
-
-        var isMobile = window.innerWidth <= 700;
-
-        if (isMobile) {
-            var howItemObserver = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('how-visible');
-                        howItemObserver.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.4 });
-
-            var howSection = document.getElementById('how-section');
-            if (howSection) {
-                howSection.querySelectorAll('.how-step, .how-connector').forEach(function(el) {
-                    howItemObserver.observe(el);
-                });
-            }
-        } else {
-            var howObserver = new IntersectionObserver(function(entries) {
-                entries.forEach(function(entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.querySelectorAll('.how-step, .how-connector').forEach(function(el) {
-                            el.classList.add('how-visible');
-                        });
-                        howObserver.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.2 });
-
-            var howSection = document.getElementById('how-section');
-            if (howSection) howObserver.observe(howSection);
-        }
-    })();
-    </script>
+    <script src="js/script.js"></script>
 </body>
 </html>

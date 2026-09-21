@@ -4,24 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adatkezelési Tájékoztató - Chrissors</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/png" href="logo png.png">
-    <style>
-        .legal-content { max-width: 800px; margin: 3rem auto; padding: 0 20px; line-height: 1.6;}
-        .legal-content h2 { color: var(--primary); font-size: 28px; letter-spacing: 1px;}
-        .legal-content h3 { margin-top: 30px; color: var(--light);  padding-bottom: 10px;}
-        .legal-content p { margin-bottom: 15px; color: #ccc; text-align: justify; }
-        .legal-content ul { margin-left: 20px; color: #ccc; margin-bottom: 15px; }
-        .legal-content li { margin-bottom: 5px; }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" type="image/png" href="kepek/logo.webp">
 </head>
 <body>
     <header>
-        <img src="logo png.webp" alt="logo" class="logo" onclick="window.location.href='index.html'">
-        <button class="btn-outline" onclick="window.location.href='index.html'">Vissza a főoldalra</button>
+        <div class="header-left">
+            <img src="kepek/logo.webp" alt="logo" class="logo" onclick="window.location.href='index.html'">
+            <span class="header-wordmark">CHRISSORS<span class="header-wordmark-dot">.</span></span>
+        </div>
+        <div style="grid-column: 3; justify-self: end; align-self: center;">
+            <button class="btn btn-back-outline" onclick="window.location.href='index.html'" >></button>
+        </div>
     </header>
 
-    <div class="legal-content">
+    <div class="modern-legal-content">
         <h2>Adatvédelmi és Adatkezelési Tájékoztató</h2>
         
         <h3>1. Az Adatkezelő adatai</h3>
@@ -34,7 +34,11 @@
             <li><strong>Név és Instagram azonosító:</strong> Célja a vendég azonosítása, a foglalások nyilvántartása és a személyre szabott kommunikáció.</li>
             <li><strong>Telefonszám:</strong> Célja a gyors kapcsolattartás (pl. időpont csúszása, lemondása esetén SMS értesítés küldése).</li>
         </ul>
-        <p><strong>Az adatkezelés jogalapja:</strong> A Te kifejezett hozzájárulásod (GDPR 6. cikk (1) bekezdés a) pontja), amelyet a regisztráció során az ÁSZF és az Adatkezelési Tájékoztató elfogadásával adsz meg, valamint a szerződés (szolgáltatás) teljesítése (GDPR 6. cikk (1) bekezdés b) pontja).</p>
+        
+        <!-- ITT VAN A KIEMELT RÉSZ -->
+        <div class="modern-highlight">
+            <p><strong>Az adatkezelés jogalapja:</strong> A Te kifejezett hozzájárulásod (GDPR 6. cikk (1) bekezdés a) pontja), amelyet a regisztráció során az ÁSZF és az Adatkezelési Tájékoztató elfogadásával adsz meg, valamint a szerződés (szolgáltatás) teljesítése (GDPR 6. cikk (1) bekezdés b) pontja).</p>
+        </div>
 
         <h3>3. Az adatkezelés időtartama</h3>
         <p>A megadott adatokat addig kezeljük, amíg a felhasználói fiókod aktív. Amennyiben kéred a fiókod törlését, személyes adataidat a rendszerünkből haladéktalanul, de legkésőbb 30 napon belül véglegesen töröljük (kivéve a számviteli törvény által megőrizni kötelezett számlázási adatokat, ha történt fizetés).</p>
@@ -57,8 +61,23 @@
     </div>
 
     <footer>
-        <div class="footer-content" style="justify-content: center; padding: 2rem;">
-            <p style="color: var(--text-gray); font-size: 0.9rem;">&copy; 2026 Chrissors'. Minden jog fenntartva.</p>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <span class="footer-logo">Chrissors'</span>
+                <p class="footer-desc">Prémium hajvágás — Fehérgyarmat &amp; Debrecen</p>
+            </div>
+            <nav class="footer-nav">
+                <a href="impresszum.html">Impresszum</a>
+                <a href="adatkezeles.html">Adatkezelés</a>
+                <a href="aszf.html">ÁSZF</a>
+                <a href="https://www.instagram.com/itschrissors?igsh=MTEzMHhleDFzcGVybg==" target="_blank" class="footer-ig">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="1.6"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor"/></svg>
+                    Instagram
+                </a>
+            </nav>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 Chrissors'. Minden jog fenntartva.</span>
         </div>
     </footer>
 </body>

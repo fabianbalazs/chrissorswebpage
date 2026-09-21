@@ -1,3 +1,218 @@
+/* =====================================================
+   PRELOADER — betöltő animáció lezárása
+   ===================================================== */
+(function () {
+    window.addEventListener('load', function () {
+        var pre = document.getElementById('preloader');
+        setTimeout(function () {
+            pre.classList.add('preloader-done');
+            document.documentElement.classList.remove('preload-lock');
+            setTimeout(function () { pre.remove(); }, 700);
+        }, 1150);
+    });
+})();
+
+/* =====================================================
+   NAVIGÁCIÓ — sima görgetés, how-to kártyák lapozása
+   ===================================================== */
+function smoothScrollTo(targetId, duration) {
+    var target = document.getElementById(targetId);
+    if (!target) return;
+    duration = duration || 1100;
+    var startY = window.pageYOffset;
+    var targetY = target.getBoundingClientRect().top + startY;
+    var distance = targetY - startY;
+    var startTime = null;
+
+    function easeInOutQuart(t) {
+        return t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+    }
+
+    function step(currentTime) {
+        if (startTime === null) startTime = currentTime;
+        var elapsed = currentTime - startTime;
+        var progress = Math.min(elapsed / duration, 1);
+        window.scrollTo(0, startY + distance * easeInOutQuart(progress));
+        if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+
+function scrollHowSteps(dir) {
+    var track = document.querySelector('.how-inner');
+    var step = track.querySelector('.how-step');
+    if (!track || !step) return;
+    var styles = window.getComputedStyle(track);
+    var gap = parseFloat(styles.columnGap || styles.gap || 0) || 0;
+    var amount = step.getBoundingClientRect().width + gap;
+    track.scrollBy({ left: dir * amount, behavior: 'smooth' });
+}
+
+function updateHowProgress() {
+    var track = document.querySelector('.how-inner');
+    var fill = document.getElementById('how-progress-fill');
+    if (!track || !fill) return;
+    var steps = track.querySelectorAll('.how-step');
+    if (!steps.length) return;
+    var stepWidth = steps[0].getBoundingClientRect().width;
+    if (!stepWidth) return;
+    var index = Math.round(track.scrollLeft / stepWidth);
+    index = Math.max(0, Math.min(steps.length - 1, index));
+    fill.style.width = (((index + 1) / steps.length) * 100) + '%';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    var track = document.querySelector('.how-inner');
+    if (!track) return;
+    track.scrollLeft = 0;
+    updateHowProgress();
+    track.addEventListener('scroll', function () {
+        window.requestAnimationFrame(updateHowProgress);
+    });
+    window.addEventListener('resize', updateHowProgress);
+});
+
+
+/* =====================================================
+   FEJLÉC — szolgáltatások lenyíló menü
+   ===================================================== */
+function openServicesNav() {
+    document.getElementById('services-nav-panel').classList.add('open');
+    document.getElementById('services-nav-btn').classList.add('active');
+}
+function closeServicesNav() {
+    document.getElementById('services-nav-panel').classList.remove('open');
+    document.getElementById('services-nav-btn').classList.remove('active');
+}
+document.querySelectorAll('.nav-mega-item').forEach(function (item) {
+    item.addEventListener('click', closeServicesNav);
+});
+function toggleServicesNav(e) {
+    e.stopPropagation();
+    if (window.matchMedia('(hover: hover)').matches) return;
+    var panel = document.getElementById('services-nav-panel');
+    if (panel.classList.contains('open')) {
+        closeServicesNav();
+    } else {
+        openServicesNav();
+    }
+}
+document.addEventListener('click', function (e) {
+    var panel = document.getElementById('services-nav-panel');
+    if (panel && panel.classList.contains('open') && !e.target.closest('#services-nav-panel') && !e.target.closest('#services-nav-btn')) {
+        closeServicesNav();
+    }
+});
+(function () {
+    var header = document.querySelector('header');
+    var dropdown = document.querySelector('.nav-dropdown');
+    var panel = document.getElementById('services-nav-panel');
+    if (!header || !dropdown || !panel || !window.matchMedia('(hover: hover)').matches) return;
+    dropdown.addEventListener('mouseenter', openServicesNav);
+    header.addEventListener('mouseleave', closeServicesNav);
+    document.querySelectorAll('.main-nav > .nav-link, .header-left').forEach(function (el) {
+        el.addEventListener('mouseenter', closeServicesNav);
+    });
+})();
+
+
+/* =====================================================
+   GY.I.K. — lenyíló kérdés-válasz accordion
+   ===================================================== */
+function toggleFaq(btn) {
+    var item = btn.closest('.faq-item');
+    var wrap = item.querySelector('.faq-answer-wrap');
+    var isOpen = item.classList.contains('open');
+
+    document.querySelectorAll('.faq-item.open').forEach(function (openItem) {
+        if (openItem !== item) {
+            openItem.classList.remove('open');
+            var w = openItem.querySelector('.faq-answer-wrap');
+            w.style.maxHeight = w.scrollHeight + 'px';
+            requestAnimationFrame(function () { w.style.maxHeight = '0px'; });
+        }
+    });
+
+    if (isOpen) {
+        wrap.style.maxHeight = wrap.scrollHeight + 'px';
+        requestAnimationFrame(function () { wrap.style.maxHeight = '0px'; });
+        item.classList.remove('open');
+    } else {
+        item.classList.add('open');
+        wrap.style.maxHeight = wrap.scrollHeight + 'px';
+        wrap.addEventListener('transitionend', function handler() {
+            if (item.classList.contains('open')) wrap.style.maxHeight = 'none';
+            wrap.removeEventListener('transitionend', handler);
+        });
+    }
+}
+window.addEventListener('resize', function () {
+    document.querySelectorAll('.faq-item.open .faq-answer-wrap').forEach(function (w) {
+        w.style.maxHeight = 'none';
+    });
+});
+
+
+/* =====================================================
+   BELÉPÉS / REGISZTRÁCIÓ — jelszó mutatása, sütiszalag
+   ===================================================== */
+function togglePassword(btn) {
+    var input = btn.parentElement.querySelector('input');
+    var show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.classList.toggle('revealed', show);
+}
+
+function resetPasswordFields() {
+    document.querySelectorAll('.password-wrap').forEach(function (wrap) {
+        var input = wrap.querySelector('input');
+        var btn = wrap.querySelector('.password-toggle');
+        if (input) input.type = 'password';
+        if (btn) btn.classList.remove('revealed');
+    });
+}
+
+// Minden belépés/regisztráció megnyitásakor alaphelyzet: a jelszó rejtve
+window.addEventListener('load', function () {
+    resetPasswordFields();
+    if (window.app) {
+        ['showUserLogin', 'showRegister', 'showHome', 'showForgotPassword'].forEach(function (fn) {
+            if (typeof app[fn] !== 'function') return;
+            var original = app[fn].bind(app);
+            app[fn] = function () {
+                var result = original.apply(null, arguments);
+                resetPasswordFields();
+                return result;
+            };
+        });
+    }
+});
+
+function acceptCookies() {
+    try { localStorage.setItem('chrissors_cookies', '1'); } catch (e) {}
+    document.getElementById('cookie-banner').classList.remove('show');
+    setTimeout(function () {
+        document.getElementById('cookie-banner').classList.add('hidden');
+    }, 400);
+}
+
+window.addEventListener('load', function () {
+    var accepted = false;
+    try { accepted = localStorage.getItem('chrissors_cookies') === '1'; } catch (e) {}
+    if (accepted) return;
+    var banner = document.getElementById('cookie-banner');
+    setTimeout(function () {
+        banner.classList.remove('hidden');
+        requestAnimationFrame(function () { banner.classList.add('show'); });
+    }, 2000);
+});
+
+
+
+/* =====================================================
+   FIREBASE ÉS FŐ ALKALMAZÁS-LOGIKA
+   ===================================================== */
 const firebaseConfig = {
     apiKey: "AIzaSyBbv9eJqmJipaNeb7PMTBKxckwukG02UpU",
     authDomain: "chrissor-web.firebaseapp.com",
@@ -165,6 +380,9 @@ const app = {
         const userInfo = document.getElementById('drawer-user-info');
         const logoutBtn = document.getElementById('drawer-logout-btn');
 
+        // A régi oldalsó menü (drawer) már nincs az oldalon – ilyenkor nincs mit renderelni
+        if (!list || !userInfo || !logoutBtn) return;
+
         if (!this.activeUser) {
             userInfo.innerHTML = '<p style="color:#888;">Nincs bejelentkezett felhasználó.</p>';
             list.innerHTML = '<p style="color:#666; font-size:0.9rem;">Jelentkezz be a foglalásaid megtekintéséhez.</p>';
@@ -247,11 +465,11 @@ const app = {
         firebase.auth().signOut().then(() => {
             this.activeUser = null;
             this.renderHeroBookings();
-            this.showNotification('Sikeres kijelentkezés!');
-            this.showHome();
+            // this.showNotification('Sikeres kijelentkezés!');
+            window.location.reload();
         }).catch((error) => {
             console.error("Kijelentkezési hiba:", error);
-            this.showNotification('Hiba a kijelentkezéskor.', 'error');
+            // this.showNotification('Hiba a kijelentkezéskor.', 'error');
         });
     },
 
@@ -279,6 +497,7 @@ const app = {
     },
 
     showHome: function() {
+        
         this.hideAllViews();
         document.getElementById('view-home').classList.remove('hidden');
 
@@ -290,6 +509,7 @@ const app = {
         const gallery   = document.getElementById('gallery-ribbon');
         const lightbox  = document.getElementById('lightbox');
         const reviews   = document.getElementById('reviews-section-wrapper');
+        const faqSec    = document.getElementById('faq-section');
 
         if(this.activeUser) {
             document.getElementById('auth-buttons').classList.add('hidden');
@@ -304,6 +524,7 @@ const app = {
             home.appendChild(gallery);
             home.appendChild(lightbox);
             home.appendChild(reviews);
+            home.appendChild(faqSec);
             
             this.renderPublicSlots();
         } else {
@@ -319,22 +540,28 @@ const app = {
             home.appendChild(statsSec);
             home.appendChild(lightbox);
             home.appendChild(reviews);
+            home.appendChild(faqSec);
             home.appendChild(booking);
         }
     },
-    showRegister: function() { this.hideAllViews(); document.getElementById('view-register').classList.remove('hidden'); },
-    showUserLogin: function() { this.hideAllViews(); document.getElementById('view-user-login').classList.remove('hidden'); },
+    showRegister: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' });document.getElementById('view-register').classList.remove('hidden'); },
+    showUserLogin: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById('view-user-login').classList.remove('hidden'); },
+    showPriceList: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById('view-price-list').classList.remove('hidden'); },
     showForgotPassword: function() { this.hideAllViews(); document.getElementById('view-forgot-password').classList.remove('hidden'); },
     showLogin: function() { this.hideAllViews(); document.getElementById('view-login').classList.remove('hidden'); },
     showDashboard: function() {
         this.hideAllViews();
+        document.querySelector('header').classList.add('header-hidden');
         document.getElementById('view-dashboard').classList.remove('hidden');
         this.renderAdminLists();
         this.renderAdminCalendar();
         this.renderAdminReviews();
         this.renderAdminServices();
     },
-    hideAllViews: function() { document.querySelectorAll('body > div[id^="view-"]').forEach(el => el.classList.add('hidden')); },
+    hideAllViews: function() {
+        document.querySelector('header').classList.remove('header-hidden');
+        document.querySelectorAll('body > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
+    },
     toggleAccordion: function(id) {
         const content = document.getElementById(id);
         const btn = document.querySelector(`button[onclick="app.toggleAccordion('${id}')"]`);
@@ -425,9 +652,10 @@ const app = {
 
                 if (userData.status === 'approved') {
                     this.activeUser = userData;
-                    this.showNotification(`Sikeres belépés! Üdv, ${userData.name}`, 'success');
+                    // this.showNotification(`Sikeres belépés! Üdv, ${userData.name}`, 'success');
                     document.getElementById('login-email').value = '';
                     document.getElementById('login-pass').value = '';
+                    window.location.reload();
                     this.showHome();
                     this.renderUserBookings();
                     this.renderHeroBookings();
@@ -436,12 +664,16 @@ const app = {
                 }
             } else {
                 firebase.auth().signOut();
-                this.showNotification('Nincs ilyen profil.', 'error');
+                // this.showNotification('Nincs ilyen profil.', 'error');
             }
         })
         .catch((error) => {
             console.error("Login hiba:", error);
-            this.showNotification('Hibás e-mail cím vagy jelszó.', 'error');
+            // Csak a tényleges bejelentkezési hibákra írjunk hibás jelszót,
+            // a belépés utáni renderelési hibák ne látszódjanak hibás belépésként
+            if (error && typeof error.code === 'string' && error.code.startsWith('auth/')) {
+                this.showNotification('Hibás e-mail cím vagy jelszó.', 'error');
+            }
         });
     },
 
@@ -599,6 +831,7 @@ const app = {
 
             this.hideAllViews();
             document.getElementById('view-booking-form').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     },
 
@@ -675,7 +908,7 @@ const app = {
             }
 
             Promise.all(promises).then(() => {
-                this.showNotification('Sikeres foglalás!', 'success');
+                // this.showNotification('Sikeres foglalás!', 'success');
                 this.bookingSlotId = null;
                 this.showHome();
             });
@@ -863,6 +1096,7 @@ const app = {
         firebase.auth().signOut().then(() => {
             this.currentAdmin = null;
             this.showHome();
+            window.location.reload();
         });
     },
 
@@ -1233,16 +1467,28 @@ const app = {
         const label = document.getElementById('selected-date-label');
         const listFeher = document.getElementById('day-list-feher');
         const listDebrecen = document.getElementById('day-list-debrecen');
+
+        const bulkContainer = document.getElementById('bulk-message-container');
+        this.currentSelectedDateStr = dateStr;
+
         detailsContainer.classList.remove('hidden');
         label.innerText = `Foglalások: ${dateStr}`;
         listFeher.innerHTML = ''; listDebrecen.innerHTML = '';
+
         const dayBookings = this.data.filter(slot => slot.date === dateStr && slot.booked)
             .sort((a,b) => a.time.localeCompare(b.time));
+
+
         if(dayBookings.length === 0) {
             listFeher.innerHTML = '<p style="color:#666; text-align:center;">Nincs foglalás.</p>';
             listDebrecen.innerHTML = '<p style="color:#666; text-align:center;">Nincs foglalás.</p>';
+            if(bulkContainer) bulkContainer.style.display = 'none';
             return;
         }
+        
+        if(bulkContainer) bulkContainer.style.display = 'block';
+
+
         dayBookings.forEach(slot => {
             // --- ÚJ LOGIKA: 31 napos visszatekintés ---
             const slotDate = new Date(slot.date);
@@ -1296,6 +1542,29 @@ const app = {
             if(slot.location === 'Fehérgyarmat') listFeher.appendChild(item);
             else listDebrecen.appendChild(item);
         });
+    },
+
+    sendBulkSMS: function() {
+        if (!this.currentSelectedDateStr) return;
+        const dateStr = this.currentSelectedDateStr;
+        const dayBookings = this.data.filter(slot => slot.date === dateStr && slot.booked);
+
+        // Kigyűjtjük az egyedi telefonszámokat (ne kapjon valaki 2 SMS-t, ha dupla időpontja van)
+        const phones = [...new Set(dayBookings.map(s => s.clientPhone).filter(Boolean))];
+
+        if (phones.length === 0) {
+            return this.showNotification('Nincs elérhető telefonszám ezen a napon.', 'error');
+        }
+
+        // Telefonszámok összefűzése vesszővel (Standard formátum csoportos SMS-hez)
+        const phoneString = phones.join(',');
+
+        // Sablonszöveg összeállítása
+        const bodyText = `Kedves Vendégem! Szeretettel várlak a holnapi (${dateStr}) lefoglalt időpontodra. Ha közbejött valami, kérlek, jelezd minél hamarabb! Üdv: Krisztián`;
+        const encodedBody = encodeURIComponent(bodyText);
+
+        // SMS link megnyitása a telefonon
+        window.location.href = `sms:${phoneString}?body=${encodedBody}`;
     },
 
     renderAdminLists: function() {
@@ -1522,3 +1791,106 @@ const app = {
 };
 
 app.init();
+
+// Loading screen kezelése: pontosan 2 másodperc animáció + fade out
+document.body.classList.add('loading-active');
+
+
+/* =====================================================
+   BELÉPTETŐ ANIMÁCIÓK — görgetésre megjelenő elemek
+   ===================================================== */
+(function () {
+if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.reveal, .form-box, .time-slot').forEach(function(el) {
+        el.classList.add('visible');
+    });
+    return;
+}
+
+var revealObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            revealObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.12 });
+
+var revealConfigs = [
+    { sel: '.stat-item', variant: 'reveal-scale' },
+    { sel: '.intro-section', variant: 'reveal' },
+    { sel: '.intro-section h2', variant: 'reveal-left' },
+    { sel: '.intro-section p', variant: 'reveal-right' },
+    { sel: '.section-divider span', variant: 'reveal-line' },
+    { sel: '.gallery-ribbon-container', variant: 'reveal' },
+    { sel: '.reviews-section h2', variant: 'reveal' },
+    { sel: '#booking-section h2', variant: 'reveal' },
+    { sel: '.location-selector', variant: 'reveal-scale' },
+    { sel: '.day-group', variant: 'reveal' },
+    { sel: 'footer', variant: 'reveal' },
+    { sel: '.faq-intro', variant: 'reveal-left' },
+    { sel: '.dashboard-box', variant: 'reveal' },
+    { sel: '.accordion-btn', variant: 'reveal' },
+    { sel: '.dashboard-item', variant: 'reveal' },
+];
+
+revealConfigs.forEach(function(cfg) {
+    document.querySelectorAll(cfg.sel).forEach(function(el) {
+        el.classList.add(cfg.variant);
+        revealObserver.observe(el);
+    });
+});
+
+// Alternating left/right for card-style groups
+document.querySelectorAll('.review-card').forEach(function(el, i) {
+    el.classList.add(i % 2 === 0 ? 'reveal-left' : 'reveal-right');
+    revealObserver.observe(el);
+});
+document.querySelectorAll('.faq-item').forEach(function(el, i) {
+    el.classList.add('reveal-right');
+    revealObserver.observe(el);
+});
+
+// Review cards render dynamically after data loads, so watch for them too
+var reviewsTrackEl = document.querySelector('.reviews-track');
+if (reviewsTrackEl) {
+    var reviewMutationObserver = new MutationObserver(function() {
+        var cards = reviewsTrackEl.querySelectorAll('.review-card:not(.reveal-left):not(.reveal-right)');
+        cards.forEach(function(el, i) {
+            el.classList.add(i % 2 === 0 ? 'reveal-left' : 'reveal-right');
+            revealObserver.observe(el);
+        });
+    });
+    reviewMutationObserver.observe(reviewsTrackEl, { childList: true });
+}
+
+var easeOut = function(t) { return 1 - Math.pow(1 - t, 3); };
+
+function animateCounter(el) {
+    var target = parseInt(el.dataset.target, 10);
+    var suffix = el.dataset.suffix || '';
+    var duration = target >= 100 ? 1800 : 1200;
+    var start = performance.now();
+    function tick(now) {
+        var progress = Math.min((now - start) / duration, 1);
+        el.textContent = Math.round(easeOut(progress) * target) + suffix;
+        if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+}
+
+var statsObserver = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+            entry.target.querySelectorAll('.stat-num').forEach(function(el, i) {
+                setTimeout(function() { animateCounter(el); }, i * 200);
+            });
+            statsObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.4 });
+
+var statsSection = document.getElementById('stats-section');
+if (statsSection) statsObserver.observe(statsSection);
+})();
+
