@@ -54,7 +54,7 @@ No frameworks, no bloat — just fast, clean vanilla JavaScript talking directly
 | Frontend | HTML5, CSS3 (custom, no framework), Vanilla JavaScript |
 | Backend / Data | [Firebase](https://firebase.google.com/) (Firestore + Auth) |
 | Fonts | Plus Jakarta Sans, Inter (Google Fonts) |
-| Hosting | *(add your host here — e.g. Firebase Hosting / Netlify)* |
+| Hosting | Netlify |
 
 ---
 
