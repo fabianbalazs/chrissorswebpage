@@ -1,4 +1,4 @@
-# ✂️ Chrissors — Online Barber Reservation Platform
+# Chrissors — Online Barber Reservation Platform
 
 <img width="1459" height="723" alt="Képernyőfotó 2026-09-25 - 23 25 22" src="https://github.com/user-attachments/assets/4304e944-cc41-4c3a-b6eb-20b8cb0c5427" />
 
@@ -16,7 +16,7 @@
 
 ---
 
-## 💈 What is this?
+## What is this?
 
 **Chrissors** is a complete online reservation system built for a two-location barbershop brand. It replaces manual phone/DM bookings with a self-serve, real-time scheduling experience for customers — plus a full admin back office for the shop owner to run day-to-day operations.
 
@@ -24,7 +24,7 @@ No frameworks, no bloat — just fast, clean vanilla JavaScript talking directly
 
 ---
 
-## ✨ Features
+## Features
 
 ### For customers
 - **Multi-location booking** — choose between Fehérgyarmat and Debrecen
@@ -47,7 +47,7 @@ No frameworks, no bloat — just fast, clean vanilla JavaScript talking directly
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 | Layer | Tech |
 |---|---|
@@ -58,7 +58,7 @@ No frameworks, no bloat — just fast, clean vanilla JavaScript talking directly
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 chrissors/
@@ -76,19 +76,31 @@ chrissors/
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [ ] Email confirmations for bookings
 - [ ] Multi-language support (currently Hungarian only)
 - [ ] Staff-level scheduling (multiple barbers per location)
 - [ ] Payment/deposit integration
 
+## Screenshots
+
+<p align="center">
+  
+<img width="368" height="313" alt="Képernyőfotó 2026-09-26 - 23 09 44" src="https://github.com/user-attachments/assets/760126c4-f576-4972-b04a-8224deaca8e6" />
+<img width="652" height="568" alt="Képernyőfotó 2026-09-26 - 23 09 33" src="https://github.com/user-attachments/assets/f5e484e3-1527-41a1-81df-1901301bcead" />
+<img width="396" height="368" alt="Képernyőfotó 2026-09-26 - 23 09 05" src="https://github.com/user-attachments/assets/c9bfc901-5e1b-4996-9e3e-9f93b0e027f4" />
+
+</p>
+
+
+
 ---
 
-## 👤 Author
+## Author
 
 Built and maintained by **Balázs Fábián**.
 
-📸 [Instagram](https://www.instagram.com/itschrissors)
+[Instagram](https://www.instagram.com/fabianblzs)
 
 
