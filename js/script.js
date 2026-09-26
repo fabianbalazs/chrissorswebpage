@@ -1544,27 +1544,39 @@ const app = {
         });
     },
 
-    sendBulkSMS: function() {
-        if (!this.currentSelectedDateStr) return;
-        const dateStr = this.currentSelectedDateStr;
-        const dayBookings = this.data.filter(slot => slot.date === dateStr && slot.booked);
+sendBulkSMS: function() {
+    if (!this.currentSelectedDateStr) return;
+    const dateStr = this.currentSelectedDateStr;
+    const dayBookings = this.data.filter(slot => slot.date === dateStr && slot.booked);
 
-        // Kigyűjtjük az egyedi telefonszámokat (ne kapjon valaki 2 SMS-t, ha dupla időpontja van)
-        const phones = [...new Set(dayBookings.map(s => s.clientPhone).filter(Boolean))];
+    // Kigyűjtjük az egyedi telefonszámokat (ne kapjon valaki 2 SMS-t, ha dupla időpontja van)
+    const phones = [...new Set(dayBookings.map(s => s.clientPhone).filter(Boolean))];
 
-        if (phones.length === 0) {
-            return this.showNotification('Nincs elérhető telefonszám ezen a napon.', 'error');
-        }
+    if (phones.length === 0) {
+        return this.showNotification('Nincs elérhető telefonszám ezen a napon.', 'error');
+    }
 
-        // Telefonszámok összefűzése vesszővel (Standard formátum csoportos SMS-hez)
-        const phoneString = phones.join(',');
+    // Telefonszámok összefűzése vesszővel (Standard formátum csoportos SMS-hez)
+    const phoneString = phones.join(',');
 
-        // Sablonszöveg összeállítása
-        const bodyText = `Kedves Vendégem! Szeretettel várlak a holnapi (${dateStr}) lefoglalt időpontodra. Ha közbejött valami, kérlek, jelezd minél hamarabb! Üdv: Krisztián`;
-        const encodedBody = encodeURIComponent(bodyText);
+    // A telefonszámokat automatikusan vágólapra tesszük is (vesszővel elválasztva),
+    // hogy ha a Címzett mező nem venné fel mindet automatikusan, be lehessen illeszteni
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(phoneString).catch(() => {});
+    }
 
-        // SMS link megnyitása a telefonon
-        window.location.href = `sms:${phoneString}?body=${encodedBody}`;
+    // Sablonszöveg összeállítása
+    const bodyText = `Kedves Vendégem! Szeretettel várlak a holnapi (${dateStr}) lefoglalt időpontodra. Ha közbejött valami, kérlek, jelezd minél hamarabb! Üdv: Krisztián`;
+    const encodedBody = encodeURIComponent(bodyText);
+
+    const smsLink = document.createElement('a');
+    smsLink.href = `sms:${phoneString}?body=${encodedBody}`;
+    smsLink.style.display = 'none';
+    document.body.appendChild(smsLink);
+    smsLink.click();
+    smsLink.remove();
+
+    this.showNotification(`${phones.length} telefonszám a vágólapra másolva (vesszővel elválasztva), ha nem venné fel mindet automatikusan.`, 'success');
     },
 
     renderAdminLists: function() {
