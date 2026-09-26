@@ -86,14 +86,10 @@ chrissors/
 ## Screenshots
 
 <p align="center">
-  
-<img width="368" height="313" alt="Képernyőfotó 2026-09-26 - 23 09 44" src="https://github.com/user-attachments/assets/760126c4-f576-4972-b04a-8224deaca8e6" />
-<img width="652" height="568" alt="Képernyőfotó 2026-09-26 - 23 09 33" src="https://github.com/user-attachments/assets/f5e484e3-1527-41a1-81df-1901301bcead" />
-<img width="396" height="368" alt="Képernyőfotó 2026-09-26 - 23 09 05" src="https://github.com/user-attachments/assets/c9bfc901-5e1b-4996-9e3e-9f93b0e027f4" />
-
+  <img src="https://github.com/user-attachments/assets/760126c4-f576-4972-b04a-8224deaca8e6" width="32%">
+  <img src="https://github.com/user-attachments/assets/f5e484e3-1527-41a1-81df-1901301bcead" width="32%">
+  <img src="https://github.com/user-attachments/assets/c9bfc901-5e1b-4996-9e3e-9f93b0e027f4" width="32%">
 </p>
-
-
 
 ---
 
