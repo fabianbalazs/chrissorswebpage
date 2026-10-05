@@ -193,7 +193,7 @@ img { max-width: 100%; height: auto; }
     100% { transform: translate(-8%, -6%) scale(1.1); }
 }
 
-body > *:not(#preloader):not(.noise-overlay):not(.grid-overlay):not(.ambient-glow):not(header):not(.cookie-banner):not(.price-list-popup):not(.review-popup-overlay):not(#toast-container):not(.lightbox) {
+body > *:not(#preloader):not(.noise-overlay):not(.grid-overlay):not(.ambient-glow):not(header):not(.cookie-banner):not(.price-list-popup):not(.review-popup-overlay):not(.booking-modal-overlay):not(#toast-container):not(.lightbox) {
     position: relative;
     z-index: 3;
 }
@@ -855,11 +855,61 @@ header.header-hidden { display: none; }
 .loc-btn.active { background: linear-gradient(135deg, var(--primary-2), var(--primary)); color: #0a0a0a; border-color: var(--primary); font-weight: 700; box-shadow: 0 6px 20px rgba(212,175,55,0.3); }
 
 .calendar-grid {
+    /* flex + fix szelessegu kartyak: nem nyulnak el, es a helyszínválasztóhoz
+       hasonloan kozepre igazodnak, ha keves nap van */
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
     max-width: 800px;
     margin: 0 auto;
-    gap: 15px;
+}
+
+/* Dátumkártyák — kompakt csempék a széthúzott sávok helyett */
+.day-card {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 18px 10px 16px;
+    background: var(--bg-2);
+    border: 1px solid var(--bg-4);
+    border-radius: 16px;
+    color: inherit;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.day-card:hover {
+    border-color: var(--primary);
+    background: rgba(212,175,55,0.10);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+}
+.day-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+.day-card-weekday {
+    font-size: 0.74rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--text-gray);
+}
+.day-card-day {
+    font-family: var(--font-display);
+    font-size: 1.95rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: white;
+}
+.day-card-month { font-size: 0.78rem; color: rgba(255,255,255,0.42); }
+
+@media (max-width: 560px) {
+    /* kicsit kisebb kartya, hogy 3 is elferjen egy sorban */
+    .day-card { flex: 0 0 104px; padding: 15px 8px 13px; }
+    .day-card-day { font-size: 1.7rem; }
 }
 
 .time-slot {
@@ -2106,6 +2156,204 @@ header {
     transition: color 0.2s;
 }
 .review-popup-btns .btn-outline:hover { color: rgba(255,255,255,0.75); }
+
+/* ---------- Foglalási varázsló (modal) ---------- */
+
+.booking-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 620;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeInOverlay 0.3s ease;
+}
+.booking-modal-overlay.hidden { display: none; }
+
+.booking-modal {
+    position: relative;
+    background: linear-gradient(165deg, var(--bg-2), var(--bg-1));
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 14px;
+    padding: 2.25rem 2rem 2rem;
+    max-width: 560px;
+    width: 100%;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    text-align: left;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    animation: popupIn 0.4s var(--ease-out);
+}
+
+.booking-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s;
+}
+.booking-modal-close:hover { color: var(--primary); }
+
+.booking-modal-head { margin-bottom: 1.5rem; padding-right: 28px; }
+.booking-modal-eyebrow { display: block; margin-bottom: 0.5rem; }
+.booking-modal-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    font-size: 1.35rem;
+    color: white;
+    margin-bottom: 0.4rem;
+}
+.booking-modal-sub { font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.55; }
+
+.booking-modal-actions { display: flex; gap: 10px; margin-top: 1.25rem; }
+
+/* --- 1. lépés: szolgáltatásválasztás --- */
+.booking-options { display: flex; flex-direction: column; gap: 10px; }
+
+.booking-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: var(--bg-3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: rgba(255,255,255,0.9);
+    font-family: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.booking-option:hover {
+    border-color: rgba(212,175,55,0.55);
+    background: rgba(212,175,55,0.08);
+    transform: translateY(-1px);
+}
+.booking-option-time {
+    flex-shrink: 0;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+/* A raadasok ugyanahhoz a bal elhez igazodnak, mint az alapok —
+   a megkulonboztetes a negyzetes jeloles es a halvanyabb hatter. */
+.booking-option--addon { background: rgba(255,255,255,0.03); }
+.booking-option--addon .booking-option-time { font-size: 0.76rem; }
+
+/* A kivalasztott alap kiemelt allapota, amig a raadas-lista nyitva van */
+.booking-option--active {
+    border-color: var(--primary);
+    background: rgba(212,175,55,0.12);
+}
+.booking-option--active .booking-option-time { color: var(--primary-2); }
+
+.booking-option-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* Jelölések: az alap kör (egyszerre egy), a ráadás négyzet (több is lehet) */
+.booking-option-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: transparent;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.booking-option-mark--radio { border-radius: 50%; }
+.booking-option--active .booking-option-mark {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #1a1a1c;
+}
+
+.booking-subgroup-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-gray);
+    margin: 1.1rem 0 0.6rem;
+}
+
+/* --- osszesites + Foglalas gomb (a valasztolista aljan) --- */
+.booking-selection-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(212,175,55,0.25);
+}
+.booking-total { font-size: 0.9rem; color: rgba(255,255,255,0.6); }
+.booking-total strong { color: var(--primary); font-size: 1.15rem; }
+.booking-selection-foot .btn { min-width: 150px; }
+
+/* --- 2. lépés: idopontok --- */
+.booking-times { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.booking-time {
+    background: var(--bg-3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 9px;
+    padding: 11px 16px;
+    color: white;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.booking-time:hover {
+    border-color: var(--primary);
+    background: rgba(212,175,55,0.12);
+    transform: translateY(-1px);
+}
+
+.booking-empty {
+    background: rgba(255,85,85,0.08);
+    border: 1px solid rgba(255,85,85,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+}
+.booking-empty strong { color: var(--primary); }
+
+.booking-summary {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.booking-summary strong { color: white; }
+
+@media (max-width: 560px) {
+    .booking-modal { padding: 1.75rem 1.25rem 1.5rem; }
+    .booking-option { padding: 12px 13px; font-size: 0.86rem; }
+}
 
 /* ---------- FAQ ---------- */
 

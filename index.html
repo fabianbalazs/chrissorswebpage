@@ -532,32 +532,39 @@
         </div>
     </div>
 
-    <div id="view-booking-form" class="hidden">
-        <div class="form-box">
-            <h2 class="box-title">Foglalás Véglegesítése</h2>
-            <p class="booking-subtitle" id="booking-details-display">...</p>
+    <!-- Foglalási varázsló: dátum -> szolgáltatás -> idopont -> adatok -->
+    <div id="booking-modal-overlay" class="booking-modal-overlay hidden" onclick="app.closeBookingModal()">
+        <div class="booking-modal" onclick="event.stopPropagation()">
+            <button class="booking-modal-close" onclick="app.closeBookingModal()" aria-label="Bezárás">&times;</button>
 
-            <input type="hidden" id="client-phone">
-            <div class="form-group">
-                <label>Email cím</label>
-                <input type="email" id="client-email" placeholder="Pl. gipszjakab@gmail.com">
-            </div>
-            
-            <!-- ÚJ: Szolgáltatás választó -->
-            <div class="form-group">
-                <label>Válassz szolgáltatást:</label>
-                <div id="booking-services-container" class="services-check-grid"></div>
-                <div id="booking-time-display" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem; color: var(--primary);">Összidő: 0 perc (Max: 60 perc)</div>
+            <div class="booking-modal-head">
+                <span class="eyebrow booking-modal-eyebrow" id="booking-modal-eyebrow">FOGLALÁS</span>
+                <h3 class="booking-modal-title" id="booking-modal-title">Válassz szolgáltatást</h3>
+                <p class="booking-modal-sub" id="booking-modal-sub"></p>
             </div>
 
-            <div class="form-group">
-                <label>Megjegyzés / Kérés (Opcionális)</label>
-                <textarea id="client-note" placeholder="Pl.: Kérem, hogy a szakállamat is igazítsuk..."></textarea>
-            </div>
+            <!-- 1-2. lépés: szolgáltatás és idopont (JS rendereli) -->
+            <div id="booking-modal-step"></div>
 
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-outline" style="flex:1" onclick="app.showHome()">Mégsem</button>
-                <button id="btn-submit-booking" class="btn" style="flex:2" onclick="app.submitBooking()" disabled>Foglalás megerősítése</button>
+            <!-- 3. lépés: a foglalás véglegesítése -->
+            <div id="booking-modal-form" class="hidden">
+                <p class="booking-subtitle" id="booking-details-display">...</p>
+
+                <input type="hidden" id="client-phone">
+                <div class="form-group">
+                    <label>Email cím</label>
+                    <input type="email" id="client-email" placeholder="Pl. gipszjakab@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Megjegyzés / Kérés (Opcionális)</label>
+                    <textarea id="client-note" placeholder="Pl.: Kérem, hogy a szakállamat is igazítsuk..."></textarea>
+                </div>
+
+                <div class="booking-modal-actions">
+                    <button class="btn btn-outline" style="flex:1" onclick="app.bookingModalBack()">Vissza</button>
+                    <button id="btn-submit-booking" class="btn" style="flex:2" onclick="app.submitBooking()">Foglalás megerősítése</button>
+                </div>
             </div>
         </div>
     </div>

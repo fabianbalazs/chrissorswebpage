@@ -225,6 +225,34 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+/* =====================================================
+   FOGLALÁSI MENÜ
+   -----------------------------------------------------
+   Alapszolgáltatások: önmagukban foglalhatók.
+   A „Csak Átmenet" alatt három ráadás jelenik meg KÜLÖN-
+   KÜLÖN, és ezek szabadon, többesével is kombinálhatók.
+   A ráadások önmagukban nem foglalhatók.
+
+   Az időtartamok NINCSENEK beégetve: a szolgáltatások a
+   Firestore `services` kollekcióból oldódnak fel név alapján,
+   így ha ott változik egy idő, az alkalmazás követi.
+   ===================================================== */
+const BOOKING_MENU = {
+    // Önmagukban foglalható alapszolgáltatások
+    bases: [
+        { id: 'buzzcut',              services: ['Buzzcut'] },
+        { id: 'csak-atmenet',         services: ['Csak Átmenet'] },
+        { id: 'regen-voltam',         services: ['Régen voltam/Sok a hajam'] },
+        { id: 'teljes-fejborotvalas', services: ['Teljes Fejborotválás'] }
+    ],
+    // A „Csak Átmenet" alatt külön-külön megjelenő ráadások
+    atmenetAddons: [
+        { id: 'addon-design',  services: ['Design'] },
+        { id: 'addon-felso',   services: ['Felső Hosszból Vágás'] },
+        { id: 'addon-szakall', services: ['Szakáll igazítás'] }
+    ]
+};
+
 const app = {
     data: [],
     myAppointments: [],
@@ -236,6 +264,10 @@ const app = {
     activeUser: null,
     currentLocation: 'Fehérgyarmat',
     bookingSlotId: null,
+    bookingDate: null,
+    pendingSelection: null,
+    selectedBaseId: null,
+    selectedAddonIds: [],
     currentCalendarDate: new Date(),
     modifyingSlotId: null,
 
@@ -282,6 +314,15 @@ const app = {
                 this.services.push({ id: doc.id, ...doc.data() });
             });
             if(this.currentAdmin) this.renderAdminServices();
+
+            // Ha a foglalási ablak nyitva van és még a szolgáltatásválasztónál tart,
+            // frissítsük a menüt (a szolgáltatások ugyanis aszinkron érkeznek).
+            const overlay = document.getElementById('booking-modal-overlay');
+            const form = document.getElementById('booking-modal-form');
+            if (overlay && !overlay.classList.contains('hidden') &&
+                form && form.classList.contains('hidden') && !this.pendingSelection && this.bookingDate) {
+                this.renderBookingStepServices();
+            }
         });
 
         firebase.auth().onAuthStateChanged((user) => {
@@ -765,74 +806,412 @@ const app = {
         });
     },
 
-    renderBookingServices: function() {
-        const container = document.getElementById('booking-services-container');
-        container.innerHTML = '';
-        
-        if (this.services.length === 0) {
-            container.innerHTML = '<p style="color:#aaa; font-style:italic; font-size: 0.9rem;">Nincsenek elérhető szolgáltatások.</p>';
-        } else {
-            const sorted = this.services.slice().sort((a,b) => a.name.localeCompare(b.name));
-            sorted.forEach(srv => {
-                const label = document.createElement('label');
-                label.className = 'service-check-label';
-                label.innerHTML = `
-                    <input type="checkbox" value="${srv.id}" data-time="${srv.time}" onchange="app.calcBookingTime()">
-                    <span>${this.escapeHTML(srv.name)} <span style="color:var(--primary);">(${srv.time} perc)</span></span>
-                `;
-                container.appendChild(label);
+    /* ---------- Foglalási menü: a fehérlista feloldása ---------- */
+
+    normalizeServiceName: function(str) {
+        return (str || '').toString()
+            .toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]+/g, ' ')
+            .trim();
+    },
+
+    findServiceByName: function(name) {
+        const target = this.normalizeServiceName(name);
+        return this.services.find(s => this.normalizeServiceName(s.name) === target) || null;
+    },
+
+    // A BOOKING_MENU feloldása a Firestore-ból jött szolgáltatásokra.
+    // Az időtartamok onnan jönnek, nincsenek beégetve.
+    buildBookingMenu: function() {
+        const missing = [];
+
+        const resolve = (def) => {
+            const items = [];
+            for (const name of def.services) {
+                const srv = this.findServiceByName(name);
+                if (!srv) { missing.push(name); return null; }
+                items.push({ id: srv.id, name: srv.name, time: parseInt(srv.time) || 0 });
+            }
+            return {
+                id: def.id,
+                items: items,
+                label: items.map(i => i.name).join(' + '),
+                total: items.reduce((sum, i) => sum + i.time, 0)
+            };
+        };
+
+        const menu = {
+            bases: BOOKING_MENU.bases.map(resolve).filter(Boolean),
+            addons: BOOKING_MENU.atmenetAddons.map(resolve).filter(Boolean)
+        };
+        menu.missing = [...new Set(missing)];
+        return menu;
+    },
+
+    /* ---------- Felugró foglalási ablak ---------- */
+
+    openBookingModal: function(date) {
+        if (!this.activeUser) return;
+
+        this.bookingDate = date;
+        this.pendingSelection = null;
+        this.bookingSlotId = null;
+        this.selectedBaseId = null;
+        this.selectedAddonIds = [];
+
+        document.getElementById('booking-modal-overlay').classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        this.renderBookingStepServices();
+    },
+
+    closeBookingModal: function() {
+        document.getElementById('booking-modal-overlay').classList.add('hidden');
+        document.body.style.overflow = '';
+        this.pendingSelection = null;
+        this.bookingSlotId = null;
+    },
+
+    setBookingModalHead: function(eyebrow, title, sub) {
+        document.getElementById('booking-modal-eyebrow').innerText = eyebrow;
+        document.getElementById('booking-modal-title').innerText = title;
+        document.getElementById('booking-modal-sub').innerText = sub || '';
+    },
+
+    formatBookingDate: function(iso) {
+        const d = new Date(iso + 'T00:00:00');
+        const weekday = d.toLocaleDateString('hu-HU', { weekday: 'long' });
+        return `${iso.replace(/-/g, '.')} — ${weekday.charAt(0).toUpperCase() + weekday.slice(1)}`;
+    },
+
+    // 1. lépés: szolgáltatás
+    renderBookingStepServices: function() {
+        const step = document.getElementById('booking-modal-step');
+        document.getElementById('booking-modal-form').classList.add('hidden');
+        step.classList.remove('hidden');
+
+        this.setBookingModalHead(
+            'FOGLALÁS',
+            'Válassz szolgáltatást',
+            `${this.currentLocation} · ${this.formatBookingDate(this.bookingDate)}`
+        );
+
+        const menu = this.buildBookingMenu();
+
+        if (menu.missing.length) {
+            console.warn('[Foglalási menü] Ezek a nevek nem találhatók a Firestore `services` kollekcióban, ezért a hozzájuk tartozó csomagok kimaradnak:', menu.missing);
+        }
+
+        if (menu.bases.length === 0) {
+            step.innerHTML = '<div class="booking-empty">A szolgáltatások betöltése folyamatban van. Kérlek várj egy pillanatot, majd nyisd meg újra a dátumot.</div>';
+            return;
+        }
+
+        this.refreshServiceSelection();
+    },
+
+    /* ---------- 1. lépés: kiválasztás (nem lép tovább azonnal) ---------- */
+
+    // A kiválasztott alap + a bejelölt ráadások összegzése
+    currentSelection: function(menu) {
+        if (!this.selectedBaseId) return null;
+
+        const base = menu.bases.find(b => b.id === this.selectedBaseId);
+        if (!base) return null;
+
+        let items = base.items.slice();
+
+        // A ráadások csak a „Csak Átmenet" alatt értelmezettek,
+        // és külön-külön, szabadon kombinálhatók
+        if (this.selectedBaseId === 'csak-atmenet') {
+            menu.addons.forEach(addon => {
+                if (this.selectedAddonIds.indexOf(addon.id) !== -1) {
+                    items = items.concat(addon.items);
+                }
             });
         }
-        this.calcBookingTime();
+
+        return {
+            id: base.id,
+            items: items,
+            total: items.reduce((sum, i) => sum + i.time, 0),
+            label: items.map(i => i.name).join(', ')
+        };
     },
 
-    calcBookingTime: function() {
-        let total = 0;
-        const checkboxes = document.querySelectorAll('#booking-services-container input[type="checkbox"]:checked');
-        checkboxes.forEach(cb => total += parseInt(cb.dataset.time));
-
-        const slot = this.data.find(x => x.id === this.bookingSlotId);
-        const max = (slot && slot.maxDuration) ? slot.maxDuration : 60; 
-
-        const display = document.getElementById('booking-time-display');
-        display.innerText = `Összidő: ${total} perc (Max: ${max} perc)`;
-
-        const submitBtn = document.getElementById('btn-submit-booking');
-
-        if (total > max) {
-            display.style.color = 'var(--danger)';
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.5';
-            submitBtn.style.cursor = 'not-allowed';
-        } else if (total === 0) {
-            display.style.color = 'var(--text-gray)';
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = '0.5';
-            submitBtn.style.cursor = 'not-allowed';
-        } else {
-            display.style.color = 'var(--primary)';
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = '1';
-            submitBtn.style.cursor = 'pointer';
-        }
+    selectBase: function(id) {
+        this.selectedBaseId = id;
+        if (id !== 'csak-atmenet') this.selectedAddonIds = [];
+        this.refreshServiceSelection();
     },
 
-    startBooking: function(id) {
-        const slot = this.data.find(x => x.id === id);
-        if(slot) {
-            this.bookingSlotId = id;
-            document.getElementById('booking-details-display').innerText = `${slot.location} - ${slot.date} ${slot.time}`;
-            document.getElementById('client-phone').value = this.activeUser.phone || '';
-            document.getElementById('client-email').value = this.activeUser.email || '';
+    // A ráadásokat külön-külön lehet be- és kikapcsolni
+    selectAddon: function(id) {
+        const i = this.selectedAddonIds.indexOf(id);
+        if (i === -1) this.selectedAddonIds.push(id);
+        else this.selectedAddonIds.splice(i, 1);
+        this.refreshServiceSelection();
+    },
 
-            if(document.getElementById('client-note')) document.getElementById('client-note').value = '';
-            
-            this.renderBookingServices();
+    refreshServiceSelection: function() {
+        const step = document.getElementById('booking-modal-step');
+        if (!step) return;
+        step.innerHTML = '';
+        step.appendChild(this.buildServiceSelection(this.buildBookingMenu()));
+    },
 
-            this.hideAllViews();
-            document.getElementById('view-booking-form').classList.remove('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Egy választható sor. A ráadások négyzetes (több is bejelölhető),
+    // az alapok kör alakú jelölést kapnak (egyszerre csak egy).
+    buildOptionButton: function(opts) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'booking-option'
+            + (opts.isAddon ? ' booking-option--addon' : '')
+            + (opts.active ? ' booking-option--active' : '');
+
+        if (opts.dataset) {
+            Object.keys(opts.dataset).forEach(k => { btn.dataset[k] = opts.dataset[k]; });
         }
+
+        const markClass = 'booking-option-mark' + (opts.radio ? ' booking-option-mark--radio' : '');
+        btn.innerHTML =
+            `<span class="booking-option-main">` +
+                `<span class="${markClass}">${opts.active ? '✓' : ''}</span>` +
+                `<span>${this.escapeHTML(opts.label)}</span>` +
+            `</span>` +
+            `<span class="booking-option-time">${opts.time} perc</span>`;
+
+        btn.onclick = opts.onClick;
+        return btn;
+    },
+
+    buildServiceSelection: function(menu) {
+        const wrap = document.createElement('div');
+        wrap.className = 'booking-options';
+
+        menu.bases.forEach(base => {
+            wrap.appendChild(this.buildOptionButton({
+                label: base.label,
+                time: base.total,
+                active: this.selectedBaseId === base.id,
+                radio: true,
+                dataset: { baseId: base.id },
+                onClick: () => this.selectBase(base.id)
+            }));
+
+            // A „Csak Átmenet" alatt jelennek meg a külön ráadások
+            if (base.id === 'csak-atmenet' && this.selectedBaseId === 'csak-atmenet') {
+                wrap.appendChild(this.buildAddonGroup(menu));
+            }
+        });
+
+        wrap.appendChild(this.buildSelectionFoot(menu));
+        return wrap;
+    },
+
+    // A „Csak Átmenet" alatt külön-külön megjelenő ráadások
+    buildAddonGroup: function(menu) {
+        const group = document.createElement('div');
+        group.id = 'atmenet-addons';
+
+        const label = document.createElement('div');
+        label.className = 'booking-subgroup-label';
+        label.innerText = 'Ráadás hozzáadása – többet is választhatsz';
+        group.appendChild(label);
+
+        const list = document.createElement('div');
+        list.className = 'booking-options';
+
+        menu.addons.forEach(addon => {
+            list.appendChild(this.buildOptionButton({
+                label: addon.label,
+                time: addon.total,
+                active: this.selectedAddonIds.indexOf(addon.id) !== -1,
+                isAddon: true,
+                dataset: { addonId: addon.id },
+                onClick: () => this.selectAddon(addon.id)
+            }));
+        });
+
+        group.appendChild(list);
+        return group;
+    },
+
+    // Az összesítés és a Foglalás gomb — a lista alján
+    buildSelectionFoot: function(menu) {
+        const sel = this.currentSelection(menu);
+
+        const foot = document.createElement('div');
+        foot.className = 'booking-selection-foot';
+
+        const total = document.createElement('div');
+        total.className = 'booking-total';
+        total.innerHTML = sel
+            ? `Összesen: <strong>${sel.total} perc</strong>`
+            : 'Válassz szolgáltatást';
+        foot.appendChild(total);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn';
+        btn.innerText = 'Foglalás';
+        if (!sel) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+        }
+        btn.onclick = () => { if (sel) this.confirmSelection(sel); };
+        foot.appendChild(btn);
+
+        return foot;
+    },
+
+    // A Foglalás gomb léptet tovább az időpontválasztóra
+    confirmSelection: function(sel) {
+        this.pendingSelection = sel;
+        this.renderBookingStepTimes();
+    },
+
+    // 2. lépés: idopontok
+    fittingSlots: function(date, total) {
+        const earliest = new Date(Date.now() + (6 * 60 * 60 * 1000));
+
+        return this.data.filter(item => {
+            if (item.booked) return false;
+            if (item.location !== this.currentLocation) return false;
+            if (item.date !== date) return false;
+
+            const max = item.maxDuration || 60;
+            if (max < total) return false;
+
+            let time = item.time;
+            if (/^\d:/.test(time)) time = '0' + time;
+
+            return new Date(`${item.date}T${time}:00`) > earliest;
+        })
+        .sort((a, b) => a.time.localeCompare(b.time));
+    },
+
+    findNearestFittingDate: function(fromDate, total) {
+        const start = new Date(fromDate + 'T00:00:00');
+        const pad = n => String(n).padStart(2, '0');
+
+        for (let i = 1; i <= 30; i++) {
+            const d = new Date(start.getTime());
+            d.setDate(d.getDate() + i);
+            const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            if (this.fittingSlots(iso, total).length > 0) return iso;
+        }
+        return null;
+    },
+
+    renderBookingStepTimes: function() {
+        const sel = this.pendingSelection;
+        const step = document.getElementById('booking-modal-step');
+        const slots = this.fittingSlots(this.bookingDate, sel.total);
+
+        document.getElementById('booking-modal-form').classList.add('hidden');
+        step.classList.remove('hidden');
+
+        this.setBookingModalHead(
+            'IDŐPONT',
+            'Válassz időpontot',
+            `${this.currentLocation} · ${this.formatBookingDate(this.bookingDate)}`
+        );
+
+        step.innerHTML = '';
+
+        const summary = document.createElement('div');
+        summary.className = 'booking-summary';
+        summary.innerHTML = `Szolgáltatás: <strong>${this.escapeHTML(sel.label)}</strong> · Összidő: <strong>${sel.total} perc</strong>`;
+        step.appendChild(summary);
+
+        if (slots.length === 0) {
+            const nearest = this.findNearestFittingDate(this.bookingDate, sel.total);
+            const box = document.createElement('div');
+            box.className = 'booking-empty';
+            box.innerHTML = nearest
+                ? `Ezen a napon nincs olyan szabad időpont, ahová a(z) <strong>${sel.total} perc</strong> beférne.<br>A legközelebbi ilyen nap: <strong>${this.formatBookingDate(nearest)}</strong>`
+                : `Ezen a napon nincs olyan szabad időpont, ahová a(z) <strong>${sel.total} perc</strong> beférne, és a következő 30 napban máshol sem találtunk ilyet.`;
+            step.appendChild(box);
+
+            const actions = document.createElement('div');
+            actions.className = 'booking-modal-actions';
+
+            const back = document.createElement('button');
+            back.className = 'btn btn-outline';
+            back.style.flex = '1';
+            back.innerText = 'Másik szolgáltatás';
+            back.onclick = () => this.renderBookingStepServices();
+            actions.appendChild(back);
+
+            if (nearest) {
+                const go = document.createElement('button');
+                go.className = 'btn';
+                go.style.flex = '2';
+                go.innerText = 'Ugrás a legközelebbi napra';
+                go.onclick = () => { this.bookingDate = nearest; this.renderBookingStepTimes(); };
+                actions.appendChild(go);
+            }
+
+            step.appendChild(actions);
+            return;
+        }
+
+        const list = document.createElement('div');
+        list.className = 'booking-times';
+
+        slots.forEach(slot => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'booking-time';
+            btn.innerText = slot.time;
+            btn.onclick = () => this.chooseBookingTime(slot.id);
+            list.appendChild(btn);
+        });
+        step.appendChild(list);
+
+        const actions = document.createElement('div');
+        actions.className = 'booking-modal-actions';
+
+        const back = document.createElement('button');
+        back.className = 'btn btn-outline';
+        back.style.flex = '1';
+        back.innerText = 'Vissza';
+        back.onclick = () => this.renderBookingStepServices();
+        actions.appendChild(back);
+
+        step.appendChild(actions);
+    },
+
+    // 3. lépés: adatok
+    chooseBookingTime: function(slotId) {
+        const slot = this.data.find(x => x.id === slotId);
+        if (!slot) return;
+
+        this.bookingSlotId = slotId;
+
+        document.getElementById('booking-details-display').innerText =
+            `${slot.location} · ${this.formatBookingDate(slot.date)} · ${slot.time}`;
+        document.getElementById('client-phone').value = this.activeUser.phone || '';
+        document.getElementById('client-email').value = this.activeUser.email || '';
+        if (document.getElementById('client-note')) document.getElementById('client-note').value = '';
+
+        this.setBookingModalHead(
+            'MEGERŐSÍTÉS',
+            'Foglalás véglegesítése',
+            `${this.pendingSelection.label} · ${this.pendingSelection.total} perc`
+        );
+
+        document.getElementById('booking-modal-step').classList.add('hidden');
+        document.getElementById('booking-modal-form').classList.remove('hidden');
+    },
+
+    bookingModalBack: function() {
+        document.getElementById('booking-modal-form').classList.add('hidden');
+        document.getElementById('booking-modal-step').classList.remove('hidden');
+        this.renderBookingStepTimes();
     },
 
     submitBooking: function() {
@@ -844,19 +1223,18 @@ const app = {
 
         if (!isEmailValid) return this.showNotification('Kérlek adj meg egy érvényes e-mail címet!', 'error');
 
-        const checkboxes = Array.from(document.querySelectorAll('#booking-services-container input[type="checkbox"]:checked'));
-        if(checkboxes.length === 0) return this.showNotification('Válassz legalább egy szolgáltatást!', 'error');
+        if (!this.pendingSelection || !this.bookingSlotId) {
+            return this.showNotification('Válassz szolgáltatást és időpontot!', 'error');
+        }
 
-        let totalTime = 0;
-        let selectedServices = [];
-        checkboxes.forEach(cb => {
-            totalTime += parseInt(cb.dataset.time);
-            selectedServices.push(cb.nextElementSibling.textContent.trim().split(' (')[0]);
-        });
+        const totalTime = this.pendingSelection.total;
+        const selectedServices = this.pendingSelection.items.map(i => i.name);
 
         const slot = this.data.find(x => x.id === this.bookingSlotId);
+        if (!slot) return this.showNotification('Ez az időpont már nem elérhető, kérlek válassz másikat.', 'error');
+
         const maxAllowed = slot.maxDuration || 60;
-        
+
         if(totalTime > maxAllowed) return this.showNotification(`Maximum ${maxAllowed} percet foglalhatsz ide!`, 'error');
 
         const servicesStr = selectedServices.join(', ');
@@ -909,7 +1287,7 @@ const app = {
 
             Promise.all(promises).then(() => {
                 // this.showNotification('Sikeres foglalás!', 'success');
-                this.bookingSlotId = null;
+                this.closeBookingModal();
                 this.showHome();
             });
         }
@@ -1751,53 +2129,21 @@ sendBulkSMS: function() {
         });
 
         Object.keys(groups).forEach(date => {
-            const dayWrapper = document.createElement('div');
-            dayWrapper.className = 'day-group';
+            const dateObj = new Date(date + 'T00:00:00');
+            const weekday = dateObj.toLocaleDateString('hu-HU', { weekday: 'short' }).replace(/\.$/, '');
+            const month = dateObj.toLocaleDateString('hu-HU', { month: 'short' });
 
-            const dateObj = new Date(date);
-            const dayName = dateObj.toLocaleDateString('hu-HU', { weekday: 'long' });
-            const formattedDate = date.replace(/-/g, '.').substring(5);
-
-            const header = document.createElement('div');
-            header.className = 'day-header';
-            header.innerHTML = `
-                <span>${formattedDate} - ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}</span>
-                <span style="font-size: 0.8rem; color: #888;">${groups[date].length} időpont</span>
+            const card = document.createElement('button');
+            card.type = 'button';
+            card.className = 'day-card';
+            card.innerHTML = `
+                <span class="day-card-weekday">${weekday}</span>
+                <span class="day-card-day">${dateObj.getDate()}</span>
+                <span class="day-card-month">${month}</span>
             `;
+            card.onclick = () => app.openBookingModal(date);
 
-            const slotsDiv = document.createElement('div');
-            slotsDiv.className = 'day-slots hidden';
-
-            groups[date].forEach(slot => {
-                const btn = document.createElement('div');
-                btn.className = 'time-slot';
-                btn.style.margin = "0";
-                
-                // MÓDOSÍTÁS: Abszolút pozicionált, fekete 90% hátteres jelvény a tetején
-                let extraBadge = '';
-                if (slot.maxDuration && slot.maxDuration < 60) {
-                    extraBadge = `<div class="slot-max-badge">Max: ${slot.maxDuration} perc</div>`;
-                }
-
-                btn.innerHTML = `${extraBadge}<strong>${slot.time}</strong><br><span style="font-size:0.7rem; color:var(--primary)">FOGLALÁS</span>`;
-                btn.onclick = (e) => {
-                    e.stopPropagation();
-                    app.startBooking(slot.id);
-                };
-                slotsDiv.appendChild(btn);
-            });
-
-            header.onclick = () => {
-                const isHidden = slotsDiv.classList.contains('hidden');
-                document.querySelectorAll('.day-slots').forEach(d => d.classList.add('hidden'));
-                if (isHidden) {
-                    slotsDiv.classList.remove('hidden');
-                }
-            };
-
-            dayWrapper.appendChild(header);
-            dayWrapper.appendChild(slotsDiv);
-            container.appendChild(dayWrapper);
+            container.appendChild(card);
         });
     }
 };
