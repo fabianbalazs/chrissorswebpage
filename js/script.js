@@ -318,6 +318,11 @@ const app = {
         }[tag] || tag));
     },
 
+    currentTime: function() {
+        return this.serverTime == null ? new Date()
+            : new Date(this.serverTime + performance.now() - this.serverTimeReceived);
+    },
+
     // --- Idő-segédfüggvények (perc-alapú számolás) ---
     toMin: function(t) {
         const p = String(t).split(':');
@@ -339,7 +344,7 @@ const app = {
                 const start = this.toMin(slot.time);
                 const end = start + duration;
                 const free = duration <= slot.maxDuration && end <= 1440 &&
-                    new Date(`${date}T${slot.time}:00`).getTime() > Date.now() &&
+                    new Date(`${date}T${slot.time}:00`).getTime() > this.currentTime().getTime() &&
                     !dayBookings.some(b => start < this.toMin(b.end) && end > this.toMin(b.start));
                 if (free || !slots.has(slot.time)) slots.set(slot.time, free ? 'free' : 'busy');
             }
@@ -348,7 +353,7 @@ const app = {
         }
         const startMin = this.toMin(sched.start);
         const endMin = this.toMin(sched.end);
-        const earliest = Date.now();
+        const earliest = this.currentTime().getTime();
         const result = [];
         for (let t = startMin; t + 10 <= endMin; t += 10) {
             const time = this.toTime(t);
@@ -390,43 +395,121 @@ const app = {
         return this.gridSlots(date, duration).filter(s => s.state === 'free').map(s => s.time);
     },
 
-    init: function() {
+    init: async function() {
+        // A szerver órája alapján szűrünk, hibás eszközóra esetén sem hagyunk ki foglaltságot.
+        this.firstBookingDate = '0000-01-01';
+        try {
+            const response = await fetch(window.location.href, {
+                method: 'HEAD', cache: 'no-store', signal: AbortSignal.timeout(5000)
+            });
+            const dateHeader = response.headers.get('Date');
+            const serverDate = new Date(dateHeader || NaN);
+            if (!response.ok || !Number.isFinite(serverDate.getTime())) throw new Error('Nincs szerveridő');
+            this.serverTime = serverDate.getTime();
+            this.serverTimeReceived = performance.now();
+            this.firstBookingDate = new Intl.DateTimeFormat('sv-SE', {
+                timeZone: 'Europe/Budapest', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(serverDate);
+            this.currentCalendarDate = new Date(this.firstBookingDate + 'T12:00:00');
+        } catch (error) {
+            console.warn('A dátumszűréshez nem érhető el szerveridő, teljes időszak betöltése.', error);
+        }
 
-        db.collection("appointments").where("booked", "==", false)
-            .onSnapshot({ includeMetadataChanges: true }, (snapshot) => {
-                this.legacyFreeSlots = snapshot.metadata.fromCache ? [] : snapshot.docs.map(doc => doc.data())
+
+        let occupiedTimesLoaded = false;
+        let legacySlotsLoaded = false;
+        let schedulesLoaded = false;
+        let occupiedTimesReady = false;
+        const updateBookingAvailability = () => {
+            this.bookingsLoaded = occupiedTimesLoaded && occupiedTimesReady && legacySlotsLoaded && schedulesLoaded;
+            this.renderPublicSlots();
+        };
+        db.collection("occupiedTimes").doc('_ready')
+            .onSnapshot({ includeMetadataChanges: true }, snapshot => {
+                occupiedTimesReady = !snapshot.metadata.fromCache && snapshot.exists && snapshot.data().ready === true;
+                updateBookingAvailability();
+            }, error => {
+                console.error("Firestore: foglaltság inicializálása", error);
+                occupiedTimesReady = false;
+                updateBookingAvailability();
+            });
+        db.collection("occupiedTimes").where("date", ">=", this.firstBookingDate)
+            .onSnapshot({ includeMetadataChanges: true }, snapshot => {
+                occupiedTimesLoaded = !snapshot.metadata.fromCache;
+                this.occupiedTimes = snapshot.docs.map(doc => doc.data());
+                updateBookingAvailability();
+            }, error => {
+                console.error("Firestore: foglaltság", error);
+                occupiedTimesLoaded = false;
+                updateBookingAvailability();
+            });
+        this.startCalendarData = (admin = false) => {
+            const month = this.currentCalendarDate;
+            const from = admin
+                ? this.calendarDateString(new Date(month.getFullYear(), month.getMonth(), 1))
+                : this.firstBookingDate;
+            const until = admin
+                ? this.calendarDateString(new Date(month.getFullYear(), month.getMonth() + 1, 1))
+                : null;
+            const key = from + '/' + until;
+            if (this.calendarDataKey === key) return;
+            this.stopCalendarData?.();
+            this.calendarDataKey = key;
+            legacySlotsLoaded = false;
+            schedulesLoaded = false;
+            this.legacyFreeSlots = [];
+            this.schedules = [];
+            updateBookingAvailability();
+            let legacyQuery = db.collection("appointments").where("booked", "==", false).where("date", ">=", from);
+            let scheduleQuery = db.collection("schedules").where("date", ">=", from);
+            if (until) {
+                legacyQuery = legacyQuery.where("date", "<", until);
+                scheduleQuery = scheduleQuery.where("date", "<", until);
+            }
+            let stopLegacy = legacyQuery.onSnapshot({ includeMetadataChanges: true }, snapshot => {
+                legacySlotsLoaded = !snapshot.metadata.fromCache;
+                this.legacyFreeSlots = snapshot.docs.map(doc => doc.data())
                     .filter(slot => typeof slot.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time) &&
                         Number.isInteger(slot.maxDuration) && slot.maxDuration > 0);
-                this.renderPublicSlots();
+                updateBookingAvailability();
                 if (this.currentAdmin) this.renderAdminLists();
-            }, (error) => {
+            }, error => {
                 console.error("Firestore: régi szabad időpontok", error);
-                this.legacyFreeSlots = [];
-                this.renderPublicSlots();
-                if (this.currentAdmin) this.renderAdminLists();
+                legacySlotsLoaded = false;
+                updateBookingAvailability();
+                // shortcut: hiányzó összetett indexnél teljes régi lista, az index elkészülte után elhagyható.
+                if (error.code === 'failed-precondition') {
+                    stopLegacy = db.collection("appointments").where("booked", "==", false)
+                        .onSnapshot({ includeMetadataChanges: true }, snapshot => {
+                            legacySlotsLoaded = !snapshot.metadata.fromCache;
+                            this.legacyFreeSlots = snapshot.docs.map(doc => doc.data()).filter(slot =>
+                                slot.date >= from && (!until || slot.date < until) &&
+                                typeof slot.time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(slot.time) &&
+                                Number.isInteger(slot.maxDuration) && slot.maxDuration > 0);
+                            updateBookingAvailability();
+                            if (this.currentAdmin) this.renderAdminLists();
+                        }, fallbackError => {
+                            console.error("Firestore: régi szabad időpontok", fallbackError);
+                            legacySlotsLoaded = false;
+                            updateBookingAvailability();
+                        });
+                }
             });
-
-        db.collection("schedules").onSnapshot((querySnapshot) => {
-            this.schedules = [];
-            querySnapshot.forEach((doc) => {
-                this.schedules.push({ id: doc.id, ...doc.data() });
+            const stopSchedules = scheduleQuery.onSnapshot({ includeMetadataChanges: true }, snapshot => {
+                schedulesLoaded = !snapshot.metadata.fromCache;
+                this.schedules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                updateBookingAvailability();
+                if (this.currentAdmin) { this.renderAdminLists(); this.renderAdminCalendar(); }
+            }, error => {
+                console.error("Firestore: munkanapok", error);
+                schedulesLoaded = false;
+                updateBookingAvailability();
             });
-            this.renderPublicSlots();
-            if (this.currentAdmin) { this.renderAdminLists(); this.renderAdminCalendar(); }
-        }, (error) => console.error("Firestore: schedules", error));
+            this.stopCalendarData = () => { stopLegacy(); stopSchedules(); };
+        };
+        this.startCalendarData();
 
-        db.collection("occupiedTimes").onSnapshot({ includeMetadataChanges: true }, (querySnapshot) => {
-            this.bookingsLoaded = !querySnapshot.metadata.fromCache &&
-                querySnapshot.docs.some(doc => doc.id === '_ready' && doc.data().ready === true);
-            this.occupiedTimes = querySnapshot.docs.filter(doc => doc.id !== '_ready').map(doc => doc.data());
-            this.renderPublicSlots();
-        }, (error) => {
-            console.error("Firestore: foglaltság", error);
-            this.bookingsLoaded = false;
-            this.renderPublicSlots();
-        });
-
-        db.collection("reviews").onSnapshot((querySnapshot) => {
+        db.collection("reviews").where("status", "==", "approved").onSnapshot((querySnapshot) => {
             this.reviews = [];
             querySnapshot.forEach((doc) => {
                 this.reviews.push({ id: doc.id, ...doc.data() });
@@ -453,9 +536,59 @@ const app = {
         });
 
         let stopAdminBookings;
+        this.loadAdminMonth = () => {
+            stopAdminBookings?.();
+            this.startCalendarData(true);
+            this.bookings = [];
+            this.adminBookingsStatus = 'Foglalások betöltése…';
+            const month = this.currentCalendarDate;
+            const from = new Date(month.getFullYear(), month.getMonth(), 1);
+            from.setDate(from.getDate() - 31);
+            const until = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+            stopAdminBookings = db.collection("bookings")
+                .where("date", ">=", this.calendarDateString(from))
+                .where("date", "<", this.calendarDateString(until))
+                .onSnapshot({ includeMetadataChanges: true }, snapshot => {
+                    if (snapshot.metadata.fromCache) return;
+                    this.bookings = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    this.adminBookingsStatus = 'Ebben a hónapban nincs foglalás.';
+                    this.renderAdminLists();
+                    this.renderAdminCalendar();
+                }, error => {
+                    this.adminBookingsStatus = `A foglalások betöltése sikertelen (${error.code}).`;
+                    this.renderAdminCalendar();
+                });
+        };
+        this.startAdminData = () => {
+            if (!this.currentAdmin || this.stopAdminData) return;
+            this.users = [];
+            this.adminReviews = [];
+            this.loadAdminMonth();
+            const stopUsers = db.collection("users").onSnapshot(snapshot => {
+                this.users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                this.renderAdminLists();
+            }, error => console.error("Firestore: felhasználók", error));
+            const stopReviews = db.collection("reviews").onSnapshot(snapshot => {
+                this.adminReviews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                this.renderAdminReviews();
+            }, error => console.error("Firestore: értékelések", error));
+            this.stopAdminData = () => {
+                stopAdminBookings?.();
+                stopUsers();
+                stopReviews();
+                this.users = [];
+                this.bookings = [];
+                this.adminReviews = [];
+                this.stopAdminData = null;
+            };
+        };
+
         let stopOwnBookings;
         firebase.auth().onAuthStateChanged((user) => {
-            stopAdminBookings?.();
+            this.stopAdminData?.();
+            this.startCalendarData();
+            this.currentAdmin = null;
+            this.activeUser = null;
             stopOwnBookings?.();
             this.bookings = [];
             this.myAppointments = [];
@@ -463,45 +596,7 @@ const app = {
                 if (user.email === 'admin@chrissors.hu') {
                     console.log("Admin hitelesítve, védett adatok betöltése...");
 
-                    db.collection("users").onSnapshot((querySnapshot) => {
-                        this.users = [];
-                        querySnapshot.forEach((doc) => {
-                            this.users.push({ id: doc.id, ...doc.data() });
-                        });
-                        if(this.currentAdmin) this.renderAdminLists();
-                    });
-
                     this.currentAdmin = "Admin";
-                    this.adminBookingsStatus = 'Foglalások betöltése…';
-                    stopAdminBookings = db.collection("bookings").onSnapshot({ includeMetadataChanges: true }, async (snapshot) => {
-                        if (snapshot.metadata.fromCache) return;
-                        this.bookings = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                        this.renderAdminLists();
-                        this.adminBookingsStatus = this.bookings.length
-                            ? `Betöltött foglalások összesen: ${this.bookings.length}.`
-                            : 'A bookings gyűjtemény üres. A régi időpontok ellenőrzése…';
-                        this.renderAdminCalendar();
-                        if (!snapshot.empty) return;
-                        let status;
-                        try {
-                            const legacy = await db.collection("appointments").where("booked", "==", true).get({ source: "server" });
-                            status = legacy.empty
-                                ? 'A bookings és a régi appointments gyűjteményben sincs foglalás.'
-                                : `A bookings üres. A régi appointments gyűjteményben ${legacy.size} foglalás van.`;
-                        } catch (error) {
-                            console.error("Firestore: régi időpontok", error);
-                            status = 'A bookings üres. A régi időpontokat nem sikerült ellenőrizni.';
-                        }
-                        if (firebase.auth().currentUser?.uid !== user.uid || this.bookings.length) return;
-                        this.adminBookingsStatus = status;
-                        this.renderAdminCalendar();
-                    }, (error) => {
-                        console.error("Firestore: admin foglalások", error);
-                        this.adminBookingsStatus = `A foglalások betöltése sikertelen (${error.code}).`;
-                        this.renderAdminCalendar();
-                    });
-                    this.renderAdminLists();
-                    this.renderAdminCalendar();
                     const isAtAdminUrl = window.location.hash === '#admin' || window.location.search.includes('admin');
                     if (isAtAdminUrl) this.showDashboard();
                 } else {
@@ -596,7 +691,7 @@ const app = {
             new Date(`${a.date}T${a.start}:00`) - new Date(`${b.date}T${b.start}:00`)
         );
 
-        const now = new Date();
+        const now = this.currentTime();
         const upcoming = myBookings.filter(slot => {
             const apptDate = new Date(`${slot.date}T${slot.start}:00`);
             return (now - apptDate) / (1000 * 60 * 60) < 1;
@@ -637,7 +732,7 @@ const app = {
             new Date(`${a.date}T${a.start}:00`) - new Date(`${b.date}T${b.start}:00`)
         );
 
-        const now = new Date();
+        const now = this.currentTime();
         const upcoming = myBookings.filter(slot => {
             const apptDate = new Date(`${slot.date}T${slot.start}:00`);
             return (now - apptDate) / (1000 * 60 * 60) < 1;
@@ -712,7 +807,6 @@ const app = {
     },
 
     showHome: function() {
-        
         this.hideAllViews();
         document.getElementById('view-home').classList.remove('hidden');
 
@@ -765,7 +859,8 @@ const app = {
     showForgotPassword: function() { this.hideAllViews(); document.getElementById('view-forgot-password').classList.remove('hidden'); },
     showLogin: function() { this.hideAllViews(); document.getElementById('view-login').classList.remove('hidden'); },
     showDashboard: function() {
-        this.hideAllViews();
+        this.startAdminData?.();
+        this.hideAllViews(true);
         document.querySelector('header').classList.add('header-hidden');
         document.getElementById('view-dashboard').classList.remove('hidden');
         this.renderAdminLists();
@@ -773,7 +868,11 @@ const app = {
         this.renderAdminReviews();
         this.renderAdminServices();
     },
-    hideAllViews: function() {
+    hideAllViews: function(keepAdminData = false) {
+        if (!keepAdminData && this.stopAdminData) {
+            this.stopAdminData();
+            this.startCalendarData();
+        }
         document.querySelector('header').classList.remove('header-hidden');
         document.querySelectorAll('body > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
     },
@@ -1470,6 +1569,10 @@ const app = {
     },
 
     submitBooking: function() {
+        if (this.bookingSaving) return;
+        if (!firebase.auth().currentUser || !this.activeUser) {
+            return this.showNotification('Jelentkezz be a foglaláshoz!', 'error');
+        }
         if (!this.bookingsLoaded) {
             return this.showNotification('A foglalhatóság jelenleg nem ellenőrizhető.', 'error');
         }
@@ -1500,6 +1603,9 @@ const app = {
 
         const booking = db.collection("bookings").doc();
         const occupied = { location: this.currentLocation, date: this.bookingDate, start, end };
+        this.bookingSaving = true;
+        const submitButton = document.getElementById('btn-submit-booking');
+        submitButton.disabled = true;
         this.saveBookingTime(booking, occupied, {
             ...occupied,
             duration: totalTime,
@@ -1519,6 +1625,9 @@ const app = {
             this.showNotification(err.message === 'booking-overlap'
                 ? 'Ezt az időpontot közben lefoglalták.'
                 : 'Hiba történt a foglalás során. Próbáld újra!', 'error');
+        }).finally(() => {
+            this.bookingSaving = false;
+            submitButton.disabled = false;
         });
     },
 
@@ -1550,22 +1659,38 @@ const app = {
         });
     },
 
-    checkPendingReviews: function() {
-        if (!this.activeUser) return;
-        const now = new Date();
-        const shownKey = `reviewPopupShown_${this.activeUser.id}`;
-        const alreadyShown = JSON.parse(localStorage.getItem(shownKey) || '[]');
-        const pending = this.myAppointments.filter(b => {
-            const apptDate = new Date(`${b.date}T${b.start}:00`);
-            const diffHours = (now - apptDate) / (1000 * 60 * 60);
-            if (diffHours < 1) return false;
-            if (alreadyShown.includes(b.id)) return false;
-            return !this.reviews.some(r => r.appointmentId === b.id);
-        });
-        if (pending.length > 0) {
-            this.showReviewPopup(pending[0].id);
-            alreadyShown.push(pending[0].id);
-            localStorage.setItem(shownKey, JSON.stringify(alreadyShown));
+    checkPendingReviews: async function() {
+        if (!this.activeUser || this.checkingReviews) return;
+        this.checkingReviews = true;
+        const userId = this.activeUser.id;
+        try {
+            const now = this.currentTime();
+            const shownKey = `reviewPopupShown_${this.activeUser.id}`;
+            const alreadyShown = JSON.parse(localStorage.getItem(shownKey) || '[]');
+            const pending = this.myAppointments.filter(b => {
+                const apptDate = new Date(`${b.date}T${b.start}:00`);
+                const diffHours = (now - apptDate) / (1000 * 60 * 60);
+                if (diffHours < 1) return false;
+                if (alreadyShown.includes(b.id)) return false;
+                return true;
+            });
+            for (const booking of pending) {
+                const existing = await db.collection("reviews").where("appointmentId", "==", booking.id).limit(1).get();
+                if (this.activeUser?.id !== userId) return;
+                if (!existing.empty) {
+                    alreadyShown.push(booking.id);
+                    localStorage.setItem(shownKey, JSON.stringify(alreadyShown));
+                    continue;
+                }
+                this.showReviewPopup(booking.id);
+                alreadyShown.push(booking.id);
+                localStorage.setItem(shownKey, JSON.stringify(alreadyShown));
+                break;
+            }
+        } catch (error) {
+            console.error("Firestore: értékelési emlékeztető", error);
+        } finally {
+            this.checkingReviews = false;
         }
     },
 
@@ -1715,7 +1840,7 @@ const app = {
         else this.renderAdminLists();
     },
 
-    saveSchedule: function() {
+    saveSchedule: async function() {
         const loc = document.getElementById('new-loc').value;
         const date = document.getElementById('new-date').value;
         const startStr = document.getElementById('new-start-time').value;
@@ -1730,7 +1855,15 @@ const app = {
             return this.showNotification('A kezdésnek a befejezés előtt kell lennie!', 'error');
         }
 
-        const existing = this.schedules.find(s => s.date === date && s.location === loc);
+        let existing;
+        try {
+            const schedules = await db.collection("schedules").where("date", "==", date)
+                .where("location", "==", loc).limit(1).get({ source: 'server' });
+            existing = schedules.docs[0];
+        } catch (error) {
+            console.error("Munkaidő ellenőrzése sikertelen:", error);
+            return this.showNotification('A meglévő munkaidő nem ellenőrizhető. Próbáld újra!', 'error');
+        }
 
         if (existing) {
             db.collection("schedules").doc(existing.id).update({
@@ -1921,8 +2054,8 @@ const app = {
         pendingList.innerHTML = '';
         approvedList.innerHTML = '';
 
-        const pending = this.reviews.filter(r => r.status === 'pending');
-        const approved = this.reviews.filter(r => r.status === 'approved');
+        const pending = (this.adminReviews || []).filter(r => r.status === 'pending');
+        const approved = (this.adminReviews || []).filter(r => r.status === 'approved');
 
         if(pending.length === 0) pendingList.innerHTML = '<p style="color:#666; font-style:italic;">Nincs új vélemény.</p>';
         if(approved.length === 0) approvedList.innerHTML = '<p style="color:#666; font-style:italic;">Nincs még elfogadott vélemény.</p>';
@@ -1979,12 +2112,12 @@ const app = {
     },
 
     openAdminEditReview: function(id) {
-        const review = this.reviews.find(r => r.id === id);
+        const review = (this.adminReviews || []).find(r => r.id === id);
         if(!review) return;
         this.editingReviewId = id;
         document.getElementById('admin-review-text').value = review.text;
 
-        this.hideAllViews();
+        this.hideAllViews(true);
         document.getElementById('view-admin-edit-review').classList.remove('hidden');
     },
 
@@ -2016,7 +2149,7 @@ const app = {
         document.getElementById('mod-date').value = b.date;
         document.getElementById('mod-time').value = b.start;
         document.getElementById('mod-note').value = b.clientNote || '';
-        this.hideAllViews();
+        this.hideAllViews(true);
         document.getElementById('view-modify-booking').classList.remove('hidden');
     },
 
@@ -2062,8 +2195,14 @@ const app = {
         });
     },
 
+    calendarDateString: function(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    },
+
     changeMonth: function(step) {
+        this.currentCalendarDate.setDate(1);
         this.currentCalendarDate.setMonth(this.currentCalendarDate.getMonth() + step);
+        this.loadAdminMonth();
         this.renderAdminCalendar();
         document.getElementById('calendar-day-details').classList.add('hidden');
     },
@@ -2079,10 +2218,11 @@ const app = {
             typeof booking.date === 'string' && booking.date.startsWith(monthPrefix)
         ).length;
         document.getElementById('admin-bookings-status').textContent = this.bookings.length
-            ? `${monthCount} foglalás ebben a hónapban, ${this.bookings.length} összesen.`
+            ? `${monthCount} foglalás ebben a hónapban.`
             : this.adminBookingsStatus;
         const monthNames = ["Január", "Február", "Március", "Április", "Május", "Június", "Július", "Augusztus", "Szeptember", "Október", "November", "December"];
         monthLabel.innerText = `${year} ${monthNames[month]}`;
+        document.getElementById('manage-month-label').innerText = monthLabel.innerText;
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         let firstDayIndex = new Date(year, month, 1).getDay();
         firstDayIndex = (firstDayIndex === 0) ? 6 : firstDayIndex - 1;
@@ -2105,7 +2245,7 @@ const app = {
                 dayDiv.style.outline = '1px solid rgba(255,255,255,0.18)';
             }
 
-            const realToday = new Date();
+            const realToday = this.currentTime();
             const realTodayStr = `${realToday.getFullYear()}-${(realToday.getMonth() + 1).toString().padStart(2, '0')}-${realToday.getDate().toString().padStart(2, '0')}`;
 
             if (dateStr === realTodayStr) {
@@ -2270,7 +2410,8 @@ sendBulkEmail: function() {
                 ...schedules.keys(),
                 ...this.legacyFreeSlots.filter(s => s.location === loc).map(s => s.date),
                 ...this.bookings.filter(b => b.location === loc).map(b => b.date)
-            ])].filter(date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
+            ])].filter(date => typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+                date.startsWith(this.calendarDateString(this.currentCalendarDate).slice(0, 7))).sort();
 
             if (dates.length === 0) {
                 container.innerHTML = '<p style="color:#666; font-style:italic; padding:10px;">Nincs rögzített időpont.</p>';

@@ -645,6 +645,11 @@
                     <p style="color: var(--text-gray); font-size: 0.85rem; margin: 10px 0 0; font-style: italic;">Add meg, mettől meddig dolgozol az adott napon. A foglalható időpontok ebből 5 perces rácson számolódnak.</p>
                 </div>
                 <h3 style="margin-bottom:10px;">Munkaidő és foglalások</h3>
+                <div class="calendar-header">
+                    <button class="btn-outline" aria-label="Előző hónap" onclick="app.changeMonth(-1)">&#10094;</button>
+                    <h3 id="manage-month-label" style="color:var(--primary); text-align:center;"></h3>
+                    <button class="btn-outline" aria-label="Következő hónap" onclick="app.changeMonth(1)">&#10095;</button>
+                </div>
                 <button class="accordion-btn" aria-controls="manage-feher" aria-expanded="false" onclick="app.toggleAccordion('manage-feher')">Fehérgyarmat <span class="count-badge" id="count-manage-feher">0</span></button>
                 <div id="manage-feher" class="accordion-content" inert>
                     <div class="accordion-body"><div id="list-manage-feher" class="dashboard-list"></div></div>
