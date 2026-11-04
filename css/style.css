@@ -184,6 +184,14 @@ img { max-width: 100%; height: auto; }
     background: radial-gradient(circle, rgba(255,255,255,0.06), transparent 70%);
     animation: driftB 26s ease-in-out infinite alternate;
 }
+body:has(#view-dashboard:not(.hidden) #admin-section-users:not(.hidden)) {
+    background-image: radial-gradient(circle at 15% 0%, rgba(212,175,55,0.05), transparent 45%);
+    background-size: 100% 100vh;
+    background-repeat: no-repeat;
+}
+body:has(#view-dashboard:not(.hidden) #admin-section-users:not(.hidden)) .ambient-glow--b {
+    display: none;
+}
 @keyframes driftA {
     0%   { transform: translate(0,0) scale(1); }
     100% { transform: translate(6%, 8%) scale(1.15); }
@@ -193,7 +201,7 @@ img { max-width: 100%; height: auto; }
     100% { transform: translate(-8%, -6%) scale(1.1); }
 }
 
-body > *:not(#preloader):not(.noise-overlay):not(.grid-overlay):not(.ambient-glow):not(header):not(.cookie-banner):not(.price-list-popup):not(.review-popup-overlay):not(#toast-container):not(.lightbox) {
+body > *:not(#preloader):not(.noise-overlay):not(.grid-overlay):not(.ambient-glow):not(header):not(.cookie-banner):not(.price-list-popup):not(.review-popup-overlay):not(.booking-modal-overlay):not(#toast-container):not(.lightbox) {
     position: relative;
     z-index: 3;
 }
@@ -217,6 +225,7 @@ header {
 }
 
 header.header-hidden { display: none; }
+#gallery-ribbon, #faq-section, #booking-section { scroll-margin-top: 64px; }
 
 .header-left {
     display: flex;
@@ -425,8 +434,131 @@ header.header-hidden { display: none; }
     .nav-mega-promo { order: -1; }
 }
 
+.mobile-nav-toggle { display: none; }
+.header-navigation { display: contents; }
+.cta-mobile-label { display: none; }
+.nav-mega-promo-pin { display: none; }
+
 @media (max-width: 859px) {
-    .nav-dropdown-panel { display: none; }
+    body > header {
+        grid-template-columns: 1fr auto;
+        height: auto;
+        min-height: 56px;
+        padding: 0 16px;
+        border-bottom: 0;
+    }
+    body > header.header-hidden { display: none; }
+    .mobile-nav-toggle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        grid-column: 2;
+        grid-row: 1;
+        width: 44px;
+        height: 56px;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: #fff;
+        cursor: pointer;
+    }
+    .mobile-nav-toggle span {
+        width: 22px;
+        height: 2px;
+        border-radius: 2px;
+        background: currentColor;
+        transition: transform 0.2s var(--ease-out), background-color 0.2s;
+    }
+    .mobile-nav-toggle[aria-expanded="true"] { color: var(--primary); }
+    .mobile-nav-toggle[aria-expanded="true"] span { transform: scaleX(1.2); }
+    header .header-left { grid-row: 1; animation: none; opacity: 1; }
+    header .header-wordmark, header .nav-dropdown-panel { display: none; }
+    header.mobile-nav-open { background: var(--bg-1); }
+    header.mobile-nav-open .header-navigation {
+        display: block;
+        position: absolute;
+        inset: 100% 0 auto;
+        max-height: calc(100dvh - 56px);
+        overflow-y: auto;
+        padding: 0 16px;
+        background: var(--bg-1);
+    }
+    header.mobile-nav-open .main-nav {
+        display: flex;
+        flex-direction: column;
+        grid-column: 1 / -1;
+        justify-self: stretch;
+        padding-bottom: 12px;
+        animation: dropDown 0.25s var(--ease-out) both;
+        opacity: 1;
+    }
+    .mobile-nav-open .nav-link {
+        min-height: 44px;
+        font-size: 1.15rem;
+        padding: 8px 0;
+        text-align: left;
+        color: #fff;
+    }
+    .mobile-nav-open .main-nav > .nav-link {
+        border-bottom: 1px solid rgba(212,175,55,0.22);
+    }
+    .mobile-nav-open .nav-link::after { display: none; }
+    .mobile-nav-open .nav-dropdown-panel.open {
+        display: block;
+        position: static;
+        grid-column: 1 / -1;
+        border: 0;
+        box-shadow: none;
+    }
+    .mobile-nav-open .nav-mega { grid-template-columns: minmax(0, 1fr); padding: 0 0 16px; gap: 12px; }
+    .mobile-nav-open .nav-mega-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px 8px; }
+    .mobile-nav-open .nav-mega-item { min-height: 44px; padding: 5px 4px; gap: 8px; }
+    .mobile-nav-open .nav-mega-icon { width: 32px; height: 32px; }
+    .mobile-nav-open .nav-mega-icon svg { width: 16px; height: 16px; }
+    .mobile-nav-open .nav-mega-title { font-size: 0.85rem; line-height: 1.25; }
+    .mobile-nav-open .nav-mega-desc,
+    .mobile-nav-open .nav-mega-promo h4,
+    .mobile-nav-open .nav-mega-promo p { display: none; }
+    .mobile-nav-open .nav-mega-promo {
+        order: 0;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 12px;
+        gap: 10px;
+    }
+    .mobile-nav-open .nav-mega-promo-btn {
+        flex-shrink: 0;
+        width: auto;
+        min-height: 44px;
+        margin-top: 0;
+        padding: 10px 14px;
+        border-radius: 13px;
+        white-space: nowrap;
+    }
+    .mobile-nav-open .nav-mega-promo-tag {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 6px;
+        color: #fff;
+        font-size: 0.8rem;
+    }
+    .mobile-nav-open .nav-mega-promo-pin {
+        display: block;
+        flex-shrink: 0;
+        width: 20px;
+        height: 20px;
+        color: var(--primary);
+    }
+    .mobile-nav-open .nav-mega-promo-btn .cta-desktop-label { display: none; }
+    .mobile-nav-open .nav-mega-promo-btn .cta-mobile-label { display: inline; }
+    @media (prefers-reduced-motion: reduce) {
+        header.mobile-nav-open .main-nav { animation: none; }
+        .mobile-nav-toggle span { transition: none; }
+    }
 }
 
 /* ---------- Side drawer ---------- */
@@ -761,8 +893,10 @@ header.header-hidden { display: none; }
 .gallery-track {
     display: flex;
     width: max-content;
-    animation: scrollRibbon 60s linear infinite;
+    animation: scrollRibbon 95s linear infinite;
 }
+.gallery-track.is-paused { animation-play-state: paused; }
+.gallery-track.is-paused img { filter: grayscale(0.15) contrast(1.05) brightness(0.72); }
 
 .gallery-track img {
     width: 250px;
@@ -782,11 +916,11 @@ header.header-hidden { display: none; }
     100% { transform: translateX(-50%); }
 }
 
-.gallery-track img:not([aria-hidden]) {
+.gallery-track img {
     pointer-events: auto;
     cursor: zoom-in;
 }
-.gallery-track img:not([aria-hidden]):hover {
+.gallery-track:not(.is-paused) img:not([aria-hidden]):hover {
     filter: grayscale(0) brightness(1.1);
     transform: scale(1.045);
 }
@@ -840,6 +974,16 @@ header.header-hidden { display: none; }
 }
 
 .location-selector { display: flex; justify-content: center; gap: 20px; margin-bottom: 40px; margin-top: 30px; flex-wrap: wrap; }
+.booking-location-address {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: -20px 0 24px;
+    text-align: center;
+    color: var(--light);
+}
+.booking-location-address svg { color: var(--primary); flex-shrink: 0; }
 .loc-btn {
     background: var(--dark-gray);
     border: 1px solid rgba(255,255,255,0.14);
@@ -855,11 +999,61 @@ header.header-hidden { display: none; }
 .loc-btn.active { background: linear-gradient(135deg, var(--primary-2), var(--primary)); color: #0a0a0a; border-color: var(--primary); font-weight: 700; box-shadow: 0 6px 20px rgba(212,175,55,0.3); }
 
 .calendar-grid {
+    /* flex + fix szelessegu kartyak: nem nyulnak el, es a helyszínválasztóhoz
+       hasonloan kozepre igazodnak, ha keves nap van */
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
     max-width: 800px;
     margin: 0 auto;
-    gap: 15px;
+}
+
+/* Dátumkártyák — kompakt csempék a széthúzott sávok helyett */
+.day-card {
+    flex: 0 0 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 18px 10px 16px;
+    background: var(--bg-2);
+    border: 1px solid var(--bg-4);
+    border-radius: 16px;
+    color: inherit;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.day-card:hover {
+    border-color: var(--primary);
+    background: rgba(212,175,55,0.10);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.45);
+}
+.day-card:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+.day-card-weekday {
+    font-size: 0.74rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--text-gray);
+}
+.day-card-day {
+    font-family: var(--font-display);
+    font-size: 1.95rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: white;
+}
+.day-card-month { font-size: 0.78rem; color: rgba(255,255,255,0.42); }
+
+@media (max-width: 560px) {
+    /* kicsit kisebb kartya, hogy 3 is elferjen egy sorban */
+    .day-card { flex: 0 0 104px; padding: 15px 8px 13px; }
+    .day-card-day { font-size: 1.7rem; }
 }
 
 .time-slot {
@@ -1071,9 +1265,15 @@ header.header-hidden { display: none; }
 .accordion-btn:hover, .accordion-btn.active { background-color: var(--bg-3); color: var(--primary); }
 .accordion-content {
     padding: 0 18px; background-color: var(--bg-2);
-    max-height: 0; overflow: hidden;
+    display: grid; grid-template-rows: 0fr; overflow: hidden;
     border-left: 1px solid var(--bg-4); border-right: 1px solid var(--bg-4); margin-bottom: 10px;
-    transition: max-height 0.4s var(--ease-out);
+    border-radius: 0 0 8px 8px;
+    transition: grid-template-rows 0.4s var(--ease-out);
+}
+.accordion-content.is-open { grid-template-rows: 1fr; }
+.accordion-body { min-height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+    .accordion-content { transition: none; }
 }
 .count-badge {
     background: var(--bg-4);
@@ -1633,6 +1833,32 @@ header {
     opacity: 0;
     animation: fadeUp 0.6s var(--ease-out) 1.55s both;
 }
+.subpage-header,
+.subpage-header .header-left,
+.subpage-header .subpage-back {
+    animation: none;
+    opacity: 1;
+}
+.subpage-back {
+    grid-column: -2 / -1;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 6px 18px;
+    font-size: 0.8rem;
+    text-decoration: none;
+}
+@media (max-width: 859px) {
+    .subpage-back {
+        min-height: 38px;
+        margin-top: 6px;
+        padding: 4px 10px;
+        font-size: 0.75rem;
+    }
+}
 
 
 .hero-eyebrow {
@@ -1963,39 +2189,55 @@ header {
 
 /* ---------- Lightbox ---------- */
 
+html:has(#lightbox[open]) {
+    overflow: hidden;
+}
+
 .lightbox {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.95);
-    backdrop-filter: blur(10px);
-    z-index: 500;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+    margin: auto;
+    padding: 44px 0 0;
+    border: 0;
+    background: transparent;
+    color: var(--light);
+    overflow: visible;
 }
-.lightbox.lb-open { opacity: 1; }
-.lightbox.hidden { display: none !important; }
+.lightbox::backdrop { background: rgba(0,0,0,0.85); }
+.lightbox[open] { animation: gallery-image-open 0.25s var(--ease-out) both; }
+@keyframes gallery-image-open {
+    from { opacity: 0; transform: scale(0.94); }
+    to { opacity: 1; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .lightbox[open] { animation: none; }
+}
 
-.lightbox-content { display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 90vw; max-height: 90vh; }
+.lightbox-content { position: relative; display: flex; flex-direction: column; align-items: center; gap: 14px; max-width: 90vw; }
 
 #lightbox-img {
     max-width: 88vw;
-    max-height: 82vh;
+    max-height: calc(100dvh - 96px);
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: 14px;
     box-shadow: 0 30px 80px rgba(0,0,0,0.85);
     transition: opacity 0.15s ease;
     pointer-events: none;
 }
 
+@media (min-width: 860px) {
+    #lightbox-img {
+        max-width: min(76vw, 960px);
+        max-height: min(75dvh, calc(100dvh - 128px));
+    }
+}
+
 .lightbox-counter { font-size: 0.8rem; color: rgba(255,255,255,0.45); letter-spacing: 2px; }
 
 .lightbox-close {
-    position: fixed;
-    top: 20px;
-    right: 24px;
+    position: absolute;
+    top: -44px;
+    right: 0;
     background: none;
     border: none;
     color: rgba(255,255,255,0.6);
@@ -2106,6 +2348,213 @@ header {
     transition: color 0.2s;
 }
 .review-popup-btns .btn-outline:hover { color: rgba(255,255,255,0.75); }
+
+/* ---------- Foglalási varázsló (modal) ---------- */
+
+.booking-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 620;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeInOverlay 0.3s ease;
+}
+.booking-modal-overlay.hidden { display: none; }
+
+.booking-modal {
+    position: relative;
+    background: linear-gradient(165deg, var(--bg-2), var(--bg-1));
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 14px;
+    padding: 2.25rem 2rem 2rem;
+    max-width: 560px;
+    width: 100%;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    text-align: left;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    animation: popupIn 0.4s var(--ease-out);
+}
+
+.booking-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.45);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s;
+}
+.booking-modal-close:hover { color: var(--primary); }
+
+.booking-modal-head { margin-bottom: 1.5rem; padding-right: 28px; }
+.booking-modal-eyebrow { display: block; margin-bottom: 0.5rem; }
+.booking-modal-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    font-size: 1.35rem;
+    color: white;
+    margin-bottom: 0.4rem;
+}
+.booking-modal-sub { font-size: 0.85rem; color: rgba(255,255,255,0.5); line-height: 1.55; }
+
+.booking-modal-actions { display: flex; gap: 10px; margin-top: 1.25rem; }
+.booking-modal-actions--empty { margin-bottom: 16px; }
+.booking-modal-actions--empty .btn,
+.booking-modal-actions--empty .btn:hover {
+    min-height: 44px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    box-shadow: none;
+}
+.booking-modal-actions--empty .btn::before { display: none; }
+
+/* --- 1. lépés: szolgáltatásválasztás --- */
+.booking-options { display: flex; flex-direction: column; gap: 10px; }
+
+.booking-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    background: var(--bg-3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: rgba(255,255,255,0.9);
+    font-family: inherit;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.booking-option:hover {
+    border-color: rgba(212,175,55,0.55);
+    background: rgba(212,175,55,0.08);
+    transform: translateY(-1px);
+}
+.booking-option-time {
+    flex-shrink: 0;
+    color: var(--primary);
+    font-weight: 700;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+/* A raadasok ugyanahhoz a bal elhez igazodnak, mint az alapok —
+   a megkulonboztetes a negyzetes jeloles es a halvanyabb hatter. */
+.booking-option--addon { background: rgba(255,255,255,0.03); }
+.booking-option--addon .booking-option-time { font-size: 0.76rem; }
+
+/* A kivalasztott alap kiemelt allapota, amig a raadas-lista nyitva van */
+.booking-option--active {
+    border-color: var(--primary);
+    background: rgba(212,175,55,0.12);
+}
+.booking-option--active .booking-option-time { color: var(--primary-2); }
+
+.booking-option-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+/* Jelölések: az alap kör (egyszerre egy), a ráadás négyzet (több is lehet) */
+.booking-option-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 19px;
+    height: 19px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 5px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: transparent;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.booking-option-mark--radio { border-radius: 50%; }
+.booking-option--active .booking-option-mark {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #1a1a1c;
+}
+
+.booking-subgroup-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-gray);
+    margin: 1.1rem 0 0.6rem;
+}
+
+/* --- osszesites + Foglalas gomb (a valasztolista aljan) --- */
+.booking-selection-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid rgba(212,175,55,0.25);
+}
+.booking-total { font-size: 0.9rem; color: rgba(255,255,255,0.6); }
+.booking-total strong { color: var(--primary); font-size: 1.15rem; }
+.booking-selection-foot .btn { min-width: 150px; }
+
+/* --- 2. lépés: idopontok --- */
+.booking-times { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.booking-time {
+    background: var(--bg-3);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 9px;
+    padding: 11px 16px;
+    color: white;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.booking-time:hover {
+    border-color: var(--primary);
+    background: rgba(212,175,55,0.12);
+    transform: translateY(-1px);
+}
+
+.booking-empty {
+    background: rgba(255,85,85,0.08);
+    border: 1px solid rgba(255,85,85,0.3);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.6;
+}
+.booking-empty strong { color: var(--primary); }
+
+.booking-summary {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.55);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.booking-summary strong { color: white; }
+
+@media (max-width: 560px) {
+    .booking-modal { padding: 1.75rem 1.25rem 1.5rem; }
+    .booking-option { padding: 12px 13px; font-size: 0.86rem; }
+}
 
 /* ---------- FAQ ---------- */
 

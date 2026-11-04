@@ -29,16 +29,20 @@
     <div class="grid-overlay" aria-hidden="true"></div>
 
     <header>
+        <button type="button" class="mobile-nav-toggle" aria-label="Menü" aria-controls="main-navigation" aria-expanded="false">
+            <span aria-hidden="true"></span><span aria-hidden="true"></span>
+        </button>
         <div class="header-left">
             <img src="kepek/logo.webp" alt="logo" class="logo" onclick="app.logoutUser()">
             <span class="header-wordmark">CHRISSORS<span class="header-wordmark-dot">.</span></span>
         </div>
 
-        <nav class="main-nav">
+        <div class="header-navigation">
+        <nav class="main-nav" id="main-navigation">
             <a class="nav-link" onclick="app.showRegister()">Regisztráció</a>
-            <a class="nav-link" onclick="smoothScrollTo('gallery-ribbon', 1200)">Galéria</a>
+            <a class="nav-link" onclick="smoothScrollTo('gallery-ribbon')">Galéria</a>
             <a class="nav-link" href="arak.html">Árlista</a>
-            <a class="nav-link" onclick="smoothScrollTo('faq-section', 1200)">GY.I.K</a>
+            <a class="nav-link" onclick="smoothScrollTo('faq-section')">GY.I.K</a>
 
             <div class="nav-dropdown">
                 <button type="button" class="nav-link nav-link--drop" id="services-nav-btn" onclick="toggleServicesNav(event)">
@@ -53,7 +57,7 @@
         <div class="nav-dropdown-panel" id="services-nav-panel">
             <div class="nav-mega">
                 <div class="nav-mega-grid">
-                    <a class="nav-mega-item" onclick="app.selectLocation('Fehérgyarmat'); document.getElementById('booking-section').scrollIntoView({behavior:'smooth'})">
+                    <a class="nav-mega-item" onclick="app.selectLocation('Fehérgyarmat'); smoothScrollTo('booking-section')">
                         <span class="nav-mega-icon">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 5l12 12M18 5L9.5 13.5M6 19a2 2 0 100-4 2 2 0 000 4zM18 19a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
@@ -62,7 +66,7 @@
                             <span class="nav-mega-desc">Fehérgyarmat &amp; Debrecen</span>
                         </span>
                     </a>
-                    <a class="nav-mega-item" onclick="smoothScrollTo('gallery-ribbon', 1200)">
+                    <a class="nav-mega-item" onclick="smoothScrollTo('gallery-ribbon')">
                         <span class="nav-mega-icon">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="10" r="1.6" stroke="currentColor" stroke-width="1.4"/><path d="M21 16l-5-5-4 4-3-3-6 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
@@ -71,7 +75,7 @@
                             <span class="nav-mega-desc">Nézd meg a galériát</span>
                         </span>
                     </a>
-                    <a class="nav-mega-item" onclick="app.selectLocation('Debrecen'); document.getElementById('booking-section').scrollIntoView({behavior:'smooth'})">
+                    <a class="nav-mega-item" onclick="app.selectLocation('Debrecen'); smoothScrollTo('booking-section')">
                         <span class="nav-mega-icon">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                         </span>
@@ -89,7 +93,7 @@
                             <span class="nav-mega-desc">Foglalj pár kattintással</span>
                         </span>
                     </a>
-                    <a class="nav-mega-item" onclick="document.getElementById('gallery-ribbon').scrollIntoView({behavior:'smooth'})">
+                    <a class="nav-mega-item" onclick="smoothScrollTo('gallery-ribbon')">
                         <span class="nav-mega-icon">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12c0-4 2-8 8-8s8 4 8 8-2 8-4 8c-1 0-1-2-2-2s-1 2-2 2-1-2-2-2-1 2-2 2c-2 0-4-4-4-8z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </span>
@@ -98,24 +102,34 @@
                             <span class="nav-mega-desc">Precíz vonalvezetés</span>
                         </span>
                     </a>
-                    <a class="nav-mega-item" onclick="document.getElementById('faq-section').scrollIntoView({behavior:'smooth'})">
+                    <a class="nav-mega-item" onclick="smoothScrollTo('faq-section')">
                         <span class="nav-mega-icon">
                             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M9.5 9.5a2.5 2.5 0 114 2c-.6.6-1.5 1-1.5 2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="17" r="0.9" fill="currentColor"/></svg>
                         </span>
                         <span class="nav-mega-text">
                             <span class="nav-mega-title">Kérdésed van?</span>
-                            <span class="nav-mega-desc" onclick="smoothScrollTo('faq-section', 1200)">Nézd meg a GY.I.K-et vagy írj egy emailt</span>
+                            <span class="nav-mega-desc">Nézd meg a GY.I.K-et vagy írj egy emailt</span>
                         </span>
                     </a>
                 </div>
 
                 <div class="nav-mega-promo">
-                    <span class="nav-mega-promo-tag">Fehérgyarmat · Debrecen</span>
+                    <span class="nav-mega-promo-tag">
+                        <svg class="nav-mega-promo-pin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/>
+                            <circle cx="12" cy="10" r="2.5"/>
+                        </svg>
+                        Fehérgyarmat · Debrecen
+                    </span>
                     <h4>Foglalj most<br>időpontot.</h4>
                     <p>Válassz helyszínt, szolgáltatást és időpontot — az egész nem tart tovább egy percnél.</p>
-                    <button type="button" class="btn nav-mega-promo-btn" onclick="closeServicesNav(); app.showUserLogin()">Ugrás a foglaláshoz →</button>
+                    <button type="button" class="btn nav-mega-promo-btn" onclick="closeServicesNav(); app.showUserLogin()">
+                        <span class="cta-desktop-label">Ugrás a foglaláshoz →</span>
+                        <span class="cta-mobile-label">Foglalj most</span>
+                    </button>
                 </div>
             </div>
+        </div>
         </div>
     </header>
 
@@ -237,8 +251,8 @@
                 <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4" data-index="3">
                 <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5" data-index="4">
                 <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6" data-index="5">
-                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7" data-index="6">
-                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8" data-index="7">
+                <img src="kepek/kep7..webp" alt="Chrissors hajvágás 7" data-index="6">
+                <img src="kepek/kep8..webp" alt="Chrissors hajvágás 8" data-index="7">
                 <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9" data-index="8">
                 <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10" data-index="9">
                 <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11" data-index="10">
@@ -247,14 +261,16 @@
                 <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14" data-index="13">
                 <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15" data-index="14">
                 <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16" data-index="15">
+                <img src="kepek/kep17.webp" alt="Chrissors hajvágás 17" data-index="16">
+                <img src="kepek/kep18.webp" alt="Chrissors hajvágás 18" data-index="17">
                 <img src="kepek/kep1.webp" alt="Chrissors hajvágás 1" data-index="0" aria-hidden="true">
                 <img src="kepek/kep2.webp" alt="Chrissors hajvágás 2" data-index="1" aria-hidden="true">
                 <img src="kepek/kep3.webp" alt="Chrissors hajvágás 3" data-index="2" aria-hidden="true">
                 <img src="kepek/kep4.webp" alt="Chrissors hajvágás 4" data-index="3" aria-hidden="true">
                 <img src="kepek/kep5.webp" alt="Chrissors hajvágás 5" data-index="4" aria-hidden="true">
                 <img src="kepek/kep6.webp" alt="Chrissors hajvágás 6" data-index="5" aria-hidden="true">
-                <img src="kepek/kep7.webp" alt="Chrissors hajvágás 7" data-index="6" aria-hidden="true">
-                <img src="kepek/kep8.webp" alt="Chrissors hajvágás 8" data-index="7" aria-hidden="true">
+                <img src="kepek/kep7..webp" alt="Chrissors hajvágás 7" data-index="6" aria-hidden="true">
+                <img src="kepek/kep8..webp" alt="Chrissors hajvágás 8" data-index="7" aria-hidden="true">
                 <img src="kepek/kep9.webp" alt="Chrissors hajvágás 9" data-index="8" aria-hidden="true">
                 <img src="kepek/kep10.webp" alt="Chrissors hajvágás 10" data-index="9" aria-hidden="true">
                 <img src="kepek/kep11.webp" alt="Chrissors hajvágás 11" data-index="10" aria-hidden="true">
@@ -263,18 +279,20 @@
                 <img src="kepek/kep14.webp" alt="Chrissors hajvágás 14" data-index="13" aria-hidden="true">
                 <img src="kepek/kep15.webp" alt="Chrissors hajvágás 15" data-index="14" aria-hidden="true">
                 <img src="kepek/kep16.webp" alt="Chrissors hajvágás 16" data-index="15" aria-hidden="true">
+                <img src="kepek/kep17.webp" alt="Chrissors hajvágás 17" data-index="16" aria-hidden="true">
+                <img src="kepek/kep18.webp" alt="Chrissors hajvágás 18" data-index="17" aria-hidden="true">
             </div>
         </div>
 
-        <div id="lightbox" class="lightbox hidden" onclick="closeLightbox(event)">
-            <button class="lightbox-close" onclick="closeLightboxBtn()">&times;</button>
-            <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)">&#10094;</button>
+        <dialog id="lightbox" class="lightbox" aria-label="Galériakép">
+            <button type="button" class="lightbox-nav lightbox-prev" aria-label="Előző kép">&#10094;</button>
             <div class="lightbox-content">
+                <button type="button" class="lightbox-close" aria-label="Bezárás" autofocus>&times;</button>
                 <img id="lightbox-img" src="" alt="">
-                <div class="lightbox-counter"><span id="lightbox-cur">1</span> / <span id="lightbox-total">16</span></div>
+                <div class="lightbox-counter"><span id="lightbox-cur">1</span> / <span id="lightbox-total">18</span></div>
             </div>
-            <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">&#10095;</button>
-        </div>
+            <button type="button" class="lightbox-nav lightbox-next" aria-label="Következő kép">&#10095;</button>
+        </dialog>
 
         <div class="stats-section" id="stats-section">
             <div class="stats-inner">
@@ -284,7 +302,7 @@
                 </div>
                 <div class="stat-sep"></div>
                 <div class="stat-item">
-                    <span class="stat-num" data-target="2" data-suffix="+ év">0</span>
+                    <span class="stat-num" data-target="3" data-suffix="+ év">0</span>
                     <span class="stat-label">Tapasztalat</span>
                 </div>
                 <div class="stat-sep"></div>
@@ -330,6 +348,13 @@
                 <button class="loc-btn" onclick="app.selectLocation('Debrecen')" id="btn-debrecen">Debrecen</button>
             </div>
 
+            <p id="debrecen-booking-address" class="booking-location-address hidden">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/>
+                    <circle cx="12" cy="10" r="2.5"/>
+                </svg>
+                <span>The Salon Debrecen / Mester Utca 31.</span>
+            </p>
             <div id="slots-container" class="calendar-grid">
                 <p style="text-align:center; width:100%; color:#666;">Adatok betöltése...</p>
             </div>
@@ -532,32 +557,39 @@
         </div>
     </div>
 
-    <div id="view-booking-form" class="hidden">
-        <div class="form-box">
-            <h2 class="box-title">Foglalás Véglegesítése</h2>
-            <p class="booking-subtitle" id="booking-details-display">...</p>
+    <!-- Foglalási varázsló: dátum -> szolgáltatás -> idopont -> adatok -->
+    <div id="booking-modal-overlay" class="booking-modal-overlay hidden" onclick="app.closeBookingModal()">
+        <div class="booking-modal" onclick="event.stopPropagation()">
+            <button class="booking-modal-close" onclick="app.closeBookingModal()" aria-label="Bezárás">&times;</button>
 
-            <input type="hidden" id="client-phone">
-            <div class="form-group">
-                <label>Email cím</label>
-                <input type="email" id="client-email" placeholder="Pl. gipszjakab@gmail.com">
-            </div>
-            
-            <!-- ÚJ: Szolgáltatás választó -->
-            <div class="form-group">
-                <label>Válassz szolgáltatást:</label>
-                <div id="booking-services-container" class="services-check-grid"></div>
-                <div id="booking-time-display" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem; color: var(--primary);">Összidő: 0 perc (Max: 60 perc)</div>
+            <div class="booking-modal-head">
+                <span class="eyebrow booking-modal-eyebrow" id="booking-modal-eyebrow">FOGLALÁS</span>
+                <h3 class="booking-modal-title" id="booking-modal-title">Válassz szolgáltatást</h3>
+                <p class="booking-modal-sub" id="booking-modal-sub"></p>
             </div>
 
-            <div class="form-group">
-                <label>Megjegyzés / Kérés (Opcionális)</label>
-                <textarea id="client-note" placeholder="Pl.: Kérem, hogy a szakállamat is igazítsuk..."></textarea>
-            </div>
+            <!-- 1-2. lépés: szolgáltatás és idopont (JS rendereli) -->
+            <div id="booking-modal-step"></div>
 
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-outline" style="flex:1" onclick="app.showHome()">Mégsem</button>
-                <button id="btn-submit-booking" class="btn" style="flex:2" onclick="app.submitBooking()" disabled>Foglalás megerősítése</button>
+            <!-- 3. lépés: a foglalás véglegesítése -->
+            <div id="booking-modal-form" class="hidden">
+                <p class="booking-subtitle" id="booking-details-display">...</p>
+
+                <input type="hidden" id="client-phone">
+                <div class="form-group">
+                    <label>Email cím</label>
+                    <input type="email" id="client-email" placeholder="Pl. gipszjakab@gmail.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Megjegyzés / Kérés (Opcionális)</label>
+                    <textarea id="client-note" placeholder="Pl.: Kérem, hogy a szakállamat is igazítsuk..."></textarea>
+                </div>
+
+                <div class="booking-modal-actions">
+                    <button class="btn btn-outline" style="flex:1" onclick="app.bookingModalBack()">Vissza</button>
+                    <button id="btn-submit-booking" class="btn" style="flex:2" onclick="app.submitBooking()">Foglalás megerősítése</button>
+                </div>
             </div>
         </div>
     </div>
@@ -582,6 +614,7 @@
         <div class="container">
             <div class="admin-header">
                 <h2 style="color:white;">Adminisztráció</h2>
+                <button type="button" class="btn btn-back-outline" onclick="app.initializeOccupiedTimes(this)">Foglaltsági naptár inicializálása</button>
                 <button class="btn btn-back-outline" onclick="app.logout()">Kilépés</button>
             </div>
 
@@ -597,10 +630,8 @@
 
             <div id="admin-section-manage">
                 <div class="dashboard-box">
-                    <!-- Rejtett funkció aktiválása a címsorra kattintva -->
-                    <h3 class="box-header" style="cursor: pointer; user-select: none;" onclick="document.getElementById('hidden-single-slot-panel').classList.toggle('hidden')" title="Kattints ide a titkos panelhez!">Új időpont hirdetése (Óránkénti generálás) ↓ </h3>
+                    <h3 class="box-header">Munkaidő beállítása</h3>
                     
-                    <!-- Jelenlegi intervallum bekérése -->
                     <div class="add-slot-grid">
                         <select id="new-loc">
                             <option value="Fehérgyarmat">Fehérgyarmat</option>
@@ -609,28 +640,19 @@
                         <input type="date" id="new-date">
                         <input type="time" id="new-start-time" title="Kezdés">
                         <input type="time" id="new-end-time" title="Befejezés">
-                        <button class="btn" onclick="app.addSlot()">Létrehozás</button>
+                        <button class="btn" onclick="app.saveSchedule()">Mentés</button>
                     </div>
-
-                    <!-- REJTETT SZEKCIÓ (Egyedi időpont) -->
-                    <div id="hidden-single-slot-panel" class="hidden" style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--bg-4);">
-                        <p style="color: var(--text-gray); font-size: 0.85rem; margin-bottom: 10px; font-style: italic;">Egyetlen konkrét időpont hozzáadása</p>
-                        <div class="add-slot-grid">
-                            <select id="single-loc">
-                                <option value="Fehérgyarmat">Fehérgyarmat</option>
-                                <option value="Debrecen">Debrecen</option>
-                            </select>
-                            <input type="date" id="single-date">
-                            <input type="time" id="single-time" title="Pontos időpont">
-                            <button class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);" onclick="app.addSingleSlot()">Hozzáadás</button>
-                        </div>
-                    </div>
+                    <p style="color: var(--text-gray); font-size: 0.85rem; margin: 10px 0 0; font-style: italic;">Add meg, mettől meddig dolgozol az adott napon. A foglalható időpontok ebből 5 perces rácson számolódnak.</p>
                 </div>
-                <h3 style="margin-bottom:10px;">Aktív időpontok</h3>
-                <button class="accordion-btn" onclick="app.toggleAccordion('manage-feher')">Fehérgyarmat <span class="count-badge" id="count-manage-feher">0</span></button>
-                <div id="manage-feher" class="accordion-content"><div id="list-manage-feher" class="dashboard-list"></div></div>
-                <button class="accordion-btn" onclick="app.toggleAccordion('manage-debrecen')">Debrecen <span class="count-badge" id="count-manage-debrecen">0</span></button>
-                <div id="manage-debrecen" class="accordion-content"><div id="list-manage-debrecen" class="dashboard-list"></div></div>
+                <h3 style="margin-bottom:10px;">Munkaidő és foglalások</h3>
+                <button class="accordion-btn" aria-controls="manage-feher" aria-expanded="false" onclick="app.toggleAccordion('manage-feher')">Fehérgyarmat <span class="count-badge" id="count-manage-feher">0</span></button>
+                <div id="manage-feher" class="accordion-content" inert>
+                    <div class="accordion-body"><div id="list-manage-feher" class="dashboard-list"></div></div>
+                </div>
+                <button class="accordion-btn" aria-controls="manage-debrecen" aria-expanded="false" onclick="app.toggleAccordion('manage-debrecen')">Debrecen <span class="count-badge" id="count-manage-debrecen">0</span></button>
+                <div id="manage-debrecen" class="accordion-content" inert>
+                    <div class="accordion-body"><div id="list-manage-debrecen" class="dashboard-list"></div></div>
+                </div>
             </div>
 
             <!-- ÚJ: Szolgáltatások szekció -->
@@ -639,7 +661,7 @@
                     <h3 class="box-header">Új szolgáltatás hozzáadása</h3>
                     <div class="add-slot-grid">
                         <input type="text" id="new-service-name" placeholder="Szolgáltatás neve (pl. Hajvágás)">
-                        <input type="number" id="new-service-time" placeholder="Idő (perc)" min="5" step="5">
+                        <input type="number" id="new-service-time" placeholder="Idő (perc)" min="10" step="10">
                         <button class="btn" onclick="app.addService()">Mentés</button>
                     </div>
                 </div>
@@ -658,6 +680,7 @@
                         <div class="calendar-weekdays">
                             <div>H</div><div>K</div><div>Sz</div><div>Cs</div><div>P</div><div>Sz</div><div>V</div>
                         </div>
+                        <p id="admin-bookings-status" role="status"></p>
                         <div id="admin-calendar-grid" class="calendar-days-grid"></div>
                     </div>
 
@@ -666,20 +689,14 @@
 
                         <div id="bulk-message-container" style="text-align: center; margin-bottom: 20px; border-bottom: 1px solid #444; padding-bottom: 15px; display: none;">
                             <p style="font-size: 0.75rem; color: var(--text-gray); margin-bottom: 10px;">Emlékeztető a napi vendégeknek:</p>
-                            <button class="btn btn-outline" style="padding: 6px 16px; font-size: 0.8rem; border-color: var(--primary); color: var(--primary);" onclick="app.sendBulkSMS()">Csoportos SMS küldése</button>
+                            <button id="btn-bulk-email" class="btn btn-outline" style="padding: 6px 16px; font-size: 0.8rem; border-color: var(--primary); color: var(--primary);" onclick="app.sendBulkEmail()">Email küldése</button>
                         </div>
 
-                        <div class="split-view-container">
-                            <div class="split-column">
-                                <h4 style="color:var(--primary); text-align:center; margin-bottom:10px; border-bottom:1px solid var(--primary); padding-bottom:5px;">Fehérgyarmat</h4>
-                                <div id="day-list-feher" class="dashboard-list"></div>
-                            </div>
-
-                            <div class="split-column">
-                                <h4 style="color:var(--primary); text-align:center; margin-bottom:10px; border-bottom:1px solid var(--primary); padding-bottom:5px;">Debrecen</h4>
-                                <div id="day-list-debrecen" class="dashboard-list"></div>
-                            </div>
+                        <div style="display:flex; gap:8px; margin-bottom:12px;">
+                            <button type="button" class="loc-btn active" id="btn-cal-feher" onclick="app.selectCalendarLocation('Fehérgyarmat')" style="padding:8px 16px; font-size:0.85rem; flex:1;">Fehérgyarmat</button>
+                            <button type="button" class="loc-btn" id="btn-cal-debrecen" onclick="app.selectCalendarLocation('Debrecen')" style="padding:8px 16px; font-size:0.85rem; flex:1;">Debrecen</button>
                         </div>
+                        <div id="day-list" class="dashboard-list"></div>
                     </div>
                 </div>
             </div>
