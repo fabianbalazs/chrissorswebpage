@@ -11,20 +11,23 @@
     <link rel="icon" type="image/png" href="kepek/logo.webp">
 </head>
 <body>
-    <header>
+    <header class="subpage-header">
         <div class="header-left">
             <img src="kepek/logo.webp" alt="logo" class="logo" onclick="window.location.href='index.html'">
             <span class="header-wordmark">CHRISSORS<span class="header-wordmark-dot">.</span></span>
         </div>
-        <div style="grid-column: 3; justify-self: end; align-self: center;">
-            <button class="btn btn-back-outline" onclick="window.location.href='index.html'" >></button>
-        </div>
+        <a class="btn-back-outline subpage-back" href="index.html">Vissza</a>
     </header>
 
     <div class="price-wrapper">
         <h2>Szolgáltatások és Árak</h2>
+        <div class="location-selector" aria-label="Árlista helyszíne" role="group">
+            <button type="button" class="loc-btn active" aria-pressed="true" aria-controls="price-fehergyarmat">Fehérgyarmat</button>
+            <button type="button" class="loc-btn" aria-pressed="false" aria-controls="price-debrecen">Debrecen</button>
+        </div>
         <div class="price-img-container">
-            <img src="kepek/arlista.webp" alt="Chrissors Árlista" class="price-img">
+            <img id="price-fehergyarmat" src="kepek/arlista%20fehergyarmat.png" alt="Chrissors árlista – Fehérgyarmat" class="price-img">
+            <img id="price-debrecen" src="kepek/arlista%20debrecen.png" alt="Chrissors árlista – Debrecen" class="price-img hidden">
         </div>
         <p class="price-disclaimer">Az árváltoztatás jogát fenntartjuk!</p>
     </div>
@@ -49,5 +52,18 @@
             <span>&copy; 2026 Chrissors'. Minden jog fenntartva.</span>
         </div>
     </footer>
+    <script>
+        const priceButtons = document.querySelectorAll('.price-wrapper .loc-btn');
+        priceButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                priceButtons.forEach(option => {
+                    const selected = option === button;
+                    option.classList.toggle('active', selected);
+                    option.setAttribute('aria-pressed', String(selected));
+                    document.getElementById(option.getAttribute('aria-controls')).classList.toggle('hidden', !selected);
+                });
+            });
+        });
+    </script>
 </body>
 </html>
