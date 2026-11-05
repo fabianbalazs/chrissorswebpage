@@ -853,6 +853,18 @@ const app = {
             home.appendChild(booking);
         }
     },
+    showBookingSuccess: function(booking) {
+        // Use the saved booking, since closing the modal clears the selection.
+        document.getElementById('booking-success-date').textContent = this.formatBookingDate(booking.date);
+        document.getElementById('booking-success-time').textContent = `${booking.start} – ${booking.end}`;
+        document.getElementById('booking-success-location').textContent = booking.location === 'Debrecen'
+            ? 'Debrecen · The Salon · Mester utca 31.'
+            : booking.location;
+        this.hideAllViews();
+        document.getElementById('view-booking-success').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        document.getElementById('booking-success-title').focus({ preventScroll: true });
+    },
     showRegister: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' });document.getElementById('view-register').classList.remove('hidden'); },
     showUserLogin: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById('view-user-login').classList.remove('hidden'); },
     showPriceList: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById('view-price-list').classList.remove('hidden'); },
@@ -1619,7 +1631,7 @@ const app = {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         }).then(() => {
             this.closeBookingModal();
-            this.showHome();
+            this.showBookingSuccess(occupied);
         }).catch(err => {
             console.error("Foglalási hiba:", err);
             this.showNotification(err.message === 'booking-overlap'

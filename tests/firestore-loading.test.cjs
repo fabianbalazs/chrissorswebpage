@@ -37,7 +37,7 @@ async function setup(dateHeader = 'Wed, 04 Nov 2026 23:30:00 GMT') {
         fetch: async () => ({ ok: true, headers: { get: () => dateHeader } }),
         AbortSignal, Intl, Date, performance,
         console: { error() {}, warn() {}, log() {} },
-        window: { location: { href: 'https://example.test/', pathname: '/', search: '', hash: '' } },
+        window: { scrollTo() {}, location: { href: 'https://example.test/', pathname: '/', search: '', hash: '' } },
         document: { getElementById: element, querySelector: () => element('header'), querySelectorAll: () => [] },
         localStorage: { getItem: key => storage.get(key), setItem: (key, value) => storage.set(key, value) }
     };
@@ -138,6 +138,7 @@ test('double booking submission sends one request and restores the button after 
     element('client-phone').value = '123456789';
     app.availableStartTimes = () => ['10:00'];
     app.showNotification = () => {};
+    app.showBookingSuccess = () => assert.fail('Failed saves must not show confirmation');
     let requests = 0;
     let rejectSave;
     app.saveBookingTime = () => {
@@ -192,4 +193,50 @@ test('review reminders still appear for an appointment without a review', async 
     app.showReviewPopup = id => { shown = id; };
     await app.checkPendingReviews();
     assert.equal(shown, 'unreviewed');
+});
+
+test('confirmation opens only after saving and uses the submitted booking even if selection changes', async () => {
+    const { app, element } = await setup();
+    app.activeUser = { id: 'guest', name: 'Guest' };
+    app.bookingsLoaded = true;
+    app.currentLocation = 'Debrecen';
+    app.pendingSelection = { total: 30, items: [{ name: 'Haircut' }] };
+    app.bookingStartTime = '10:00';
+    app.bookingDate = '2026-12-01';
+    element('client-email').value = 'guest@example.test';
+    element('client-phone').value = '123456789';
+    app.availableStartTimes = () => ['10:00'];
+    let resolveSave;
+    let confirmation;
+    app.saveBookingTime = () => new Promise(resolve => { resolveSave = resolve; });
+    app.closeBookingModal = () => { app.pendingSelection = null; app.bookingStartTime = null; };
+    app.showBookingSuccess = saved => { confirmation = saved; };
+    app.showHome = () => assert.fail('Must show confirmation instead of home');
+    app.submitBooking();
+    assert.equal(confirmation, undefined);
+    app.currentLocation = 'Fehérgyarmat';
+    app.bookingDate = '2026-12-02';
+    resolveSave();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(confirmation.location, 'Debrecen');
+    assert.equal(confirmation.date, '2026-12-01');
+    assert.equal(confirmation.start, '10:00');
+    assert.equal(confirmation.end, '10:30');
+    assert.equal(app.bookingSaving, false);
+    assert.equal(element('btn-submit-booking').disabled, false);
+});
+
+test('confirmation renders both locations and moves focus to the success heading', async () => {
+    const { app, element } = await setup();
+    let focused = false;
+    app.hideAllViews = () => {};
+    element('booking-success-title').focus = () => { focused = true; };
+    const saved = { date: '2026-12-01', start: '10:00', end: '10:30', location: 'Debrecen' };
+    app.showBookingSuccess(saved);
+    assert.match(element('booking-success-date').textContent, /2026\.12\.01/);
+    assert.equal(element('booking-success-time').textContent, '10:00 – 10:30');
+    assert.match(element('booking-success-location').textContent, /Debrecen.*Mester utca 31\./);
+    assert.equal(focused, true);
+    app.showBookingSuccess({ ...saved, location: 'Fehérgyarmat' });
+    assert.equal(element('booking-success-location').textContent, 'Fehérgyarmat');
 });

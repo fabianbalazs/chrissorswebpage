@@ -458,6 +458,25 @@
         </div>
     </div>
 
+    <div id="view-booking-success" class="hidden">
+        <main class="booking-success" aria-labelledby="booking-success-title">
+            <div class="booking-success-card">
+                <span class="booking-success-check" aria-hidden="true">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 4 4L19 6"/></svg>
+                </span>
+                <h1 id="booking-success-title" tabindex="-1">Sikeres foglalás!</h1>
+                <p id="booking-success-date" class="booking-success-date"></p>
+                <p id="booking-success-time" class="booking-success-time"></p>
+                <p class="booking-success-location">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                    <span id="booking-success-location"></span>
+                </p>
+                <p class="booking-success-message">Köszönöm, hogy időpontot foglaltál!<br>Szeretettel várlak a szalonban a választott időpontban.</p>
+                <button type="button" class="btn" onclick="app.showHome()">Vissza a főoldalra</button>
+            </div>
+        </main>
+    </div>
+
     <div id="view-register" class="hidden">
         <div class="form-box">
             <h2 class="box-title">Előregisztráció</h2>
