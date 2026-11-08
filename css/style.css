@@ -2866,3 +2866,13 @@ html:has(#lightbox[open]) {
 .booking-success-location svg { flex-shrink: 0; color: var(--primary); }
 .booking-success-message { margin: 28px 0 32px; color: #bdbdbd; line-height: 1.8; }
 .booking-success-card .btn { max-width: 100%; white-space: normal; }
+
+#booking-success-calendar {
+    display: flex;
+    width: fit-content;
+    margin: 16px auto 0;
+    padding: 9px 20px;
+    font-size: 0.8rem;
+    box-shadow: none;
+}
+#booking-success-calendar::before { content: none; }

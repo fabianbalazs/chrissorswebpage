@@ -861,9 +861,58 @@ const app = {
             ? 'Debrecen · The Salon · Mester utca 31.'
             : booking.location;
         this.hideAllViews();
+        this.setBookingCalendarLink(booking);
         document.getElementById('view-booking-success').classList.remove('hidden');
         window.scrollTo({ top: 0, behavior: 'instant' });
         document.getElementById('booking-success-title').focus({ preventScroll: true });
+    },
+    setBookingCalendarLink: function(booking) {
+        const link = document.getElementById('booking-success-calendar');
+        const title = 'Chrissors - Fodrászat';
+        const location = document.getElementById('booking-success-location').textContent;
+        // Bookings use Budapest time, even when the phone uses another timezone.
+        const timestamp = time => {
+            const local = Date.parse(booking.date + 'T' + time + ':00Z');
+            let utc = local;
+            for (let i = 0; i < 2; i++) {
+                const parts = new Intl.DateTimeFormat('en-GB', {
+                    timeZone: 'Europe/Budapest', timeZoneName: 'longOffset'
+                }).formatToParts(new Date(utc));
+                const offset = parts.find(part => part.type === 'timeZoneName').value.match(/GMT([+-])(\d{2}):(\d{2})/);
+                utc = local - (offset[1] === '+' ? 1 : -1) * (Number(offset[2]) * 60 + Number(offset[3])) * 60000;
+            }
+            return utc;
+        };
+        const start = timestamp(booking.start);
+        const end = timestamp(booking.end);
+        const calendarDate = value => new Date(value).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+        const google = 'https://calendar.google.com/calendar/render?' + new URLSearchParams({
+            action: 'TEMPLATE', text: title, dates: calendarDate(start) + '/' + calendarDate(end),
+            ctz: 'Europe/Budapest', location
+        });
+        if (this.bookingCalendarUrl) URL.revokeObjectURL(this.bookingCalendarUrl);
+        link.removeAttribute('download');
+        // shortcut: browsers that block calendar intents use the prefilled Google Calendar fallback.
+        if (/Android/i.test(navigator.userAgent)) {
+            link.href = 'intent://com.android.calendar/events#Intent;scheme=content;action=android.intent.action.INSERT;' +
+                'S.title=' + encodeURIComponent(title) + ';S.eventLocation=' + encodeURIComponent(location) +
+                ';l.beginTime=' + start + ';l.endTime=' + end +
+                ';S.browser_fallback_url=' + encodeURIComponent(google) + ';end';
+        } else {
+            const escape = value => value.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/[,;]/g, match => '\\' + match);
+            const event = [
+                'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Chrissors//Booking//HU',
+                'BEGIN:VEVENT', 'UID:' + booking.date + '-' + booking.start.replace(':', '') + '-' + booking.location.normalize('NFD').replace(/[\u0300-\u036f]/g, '') + '@chrissors',
+                'DTSTAMP:' + calendarDate(Date.now()), 'DTSTART:' + calendarDate(start), 'DTEND:' + calendarDate(end),
+                'SUMMARY:' + title, 'LOCATION:' + escape(location), 'END:VEVENT', 'END:VCALENDAR', ''
+            ].join('\r\n');
+            this.bookingCalendarUrl = URL.createObjectURL(new Blob([event], { type: 'text/calendar;charset=utf-8' }));
+            link.href = this.bookingCalendarUrl;
+            // shortcut: calendar file preview depends on the browser; desktop browsers download it for import.
+            if (!/iPhone|iPad|iPod/.test(navigator.userAgent) && !(navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+                link.download = 'chrissors-foglalas.ics';
+            }
+        }
     },
     showRegister: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' });document.getElementById('view-register').classList.remove('hidden'); },
     showUserLogin: function() { this.hideAllViews(); window.scrollTo({ top: 0, behavior: 'smooth' }); document.getElementById('view-user-login').classList.remove('hidden'); },

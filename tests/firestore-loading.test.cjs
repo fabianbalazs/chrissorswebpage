@@ -27,7 +27,7 @@ async function setup(dateHeader = 'Wed, 04 Nov 2026 23:30:00 GMT') {
     });
     const element = id => {
         if (!elements.has(id)) elements.set(id, {
-            value: '', disabled: false, classList: { contains: () => true, add() {}, remove() {} }
+            value: '', disabled: false, removeAttribute(name) { delete this[name]; }, classList: { contains: () => true, add() {}, remove() {} }
         });
         return elements.get(id);
     };
@@ -35,7 +35,8 @@ async function setup(dateHeader = 'Wed, 04 Nov 2026 23:30:00 GMT') {
         db: { collection: query },
         firebase: { auth: () => auth, firestore: { FieldValue: { serverTimestamp: () => 'timestamp' } } },
         fetch: async () => ({ ok: true, headers: { get: () => dateHeader } }),
-        AbortSignal, Intl, Date, performance,
+        AbortSignal, Intl, Date, performance, Blob, URL, URLSearchParams,
+        navigator: { userAgent: 'iPhone', platform: 'iPhone' },
         console: { error() {}, warn() {}, log() {} },
         window: { scrollTo() {}, location: { href: 'https://example.test/', pathname: '/', search: '', hash: '' } },
         document: { getElementById: element, querySelector: () => element('header'), querySelectorAll: () => [] },
@@ -47,7 +48,7 @@ async function setup(dateHeader = 'Wed, 04 Nov 2026 23:30:00 GMT') {
     for (const method of ['renderPublicSlots', 'renderAdminLists', 'renderAdminCalendar',
         'renderAdminReviews', 'renderAdminServices', 'renderPublicReviews']) app[method] = () => {};
     await app.init();
-    return { app, listeners, auth, element, storage, db: context.db };
+    return { app, listeners, auth, element, storage, db: context.db, navigator: context.navigator };
 }
 
 function snapshot(docs = [], fromCache = false) {
@@ -239,4 +240,63 @@ test('confirmation renders both locations and moves focus to the success heading
     assert.equal(focused, true);
     app.showBookingSuccess({ ...saved, location: 'Fehérgyarmat' });
     assert.equal(element('booking-success-location').textContent, 'Fehérgyarmat');
+});
+
+
+test('calendar export preserves Budapest winter/summer times, title, location and midnight end', async () => {
+    const { app, element, navigator } = await setup();
+    app.hideAllViews = () => {};
+    element('booking-success-title').focus = () => {};
+    for (const [date, start, end, expectedStart, expectedEnd] of [
+        ['2026-12-01', '10:00', '10:30', '20261201T090000Z', '20261201T093000Z'],
+        ['2026-07-01', '10:00', '10:30', '20260701T080000Z', '20260701T083000Z'],
+        ['2026-07-01', '23:30', '24:00', '20260701T213000Z', '20260701T220000Z'],
+        ['2026-03-29', '10:00', '10:30', '20260329T080000Z', '20260329T083000Z'],
+        ['2026-10-25', '10:00', '10:30', '20261025T090000Z', '20261025T093000Z']
+    ]) {
+        app.showBookingSuccess({ date, start, end, location: 'Debrecen' });
+        const link = element('booking-success-calendar');
+        const event = await (await fetch(link.href)).text();
+        assert.ok(event.includes('DTSTART:' + expectedStart + '\r\n'));
+        assert.ok(event.includes('DTEND:' + expectedEnd + '\r\n'));
+        assert.ok(event.includes('SUMMARY:Chrissors - Fodrászat\r\n'));
+        assert.ok(event.includes('LOCATION:Debrecen · The Salon · Mester utca 31.\r\n'));
+        assert.equal(link.download, undefined);
+    }
+    const oldUrl = element('booking-success-calendar').href;
+    navigator.userAgent = 'Desktop';
+    app.showBookingSuccess({ date: '2026-12-01', start: '10:00', end: '10:30', location: 'Fehérgyarmat' });
+    assert.equal(element('booking-success-calendar').download, 'chrissors-foglalas.ics');
+    await assert.rejects(fetch(oldUrl));
+    URL.revokeObjectURL(element('booking-success-calendar').href);
+});
+
+test('Android calendar intent includes a prefilled event and Google Calendar fallback', async () => {
+    const { app, element, navigator } = await setup();
+    app.hideAllViews = () => {};
+    element('booking-success-title').focus = () => {};
+    navigator.userAgent = 'Mozilla/5.0 Android';
+    app.showBookingSuccess({ date: '2026-12-01', start: '10:00', end: '10:30', location: 'Fehérgyarmat' });
+    const href = element('booking-success-calendar').href;
+    assert.ok(href.startsWith('intent://com.android.calendar/events#Intent;'));
+    assert.ok(href.includes('S.title=' + encodeURIComponent('Chrissors - Fodrászat') + ';'));
+    assert.ok(href.includes('l.beginTime=' + Date.parse('2026-12-01T09:00:00Z') + ';'));
+    assert.ok(href.includes('l.endTime=' + Date.parse('2026-12-01T09:30:00Z') + ';'));
+    const fallback = new URL(decodeURIComponent(href.match(/S.browser_fallback_url=([^;]+)/)[1]));
+    assert.equal(fallback.searchParams.get('text'), 'Chrissors - Fodrászat');
+    assert.equal(fallback.searchParams.get('dates'), '20261201T090000Z/20261201T093000Z');
+    assert.equal(fallback.searchParams.get('location'), 'Fehérgyarmat');
+    assert.equal(fallback.searchParams.get('ctz'), 'Europe/Budapest');
+});
+
+
+test('calendar file escapes location text without allowing extra event properties', async () => {
+    const { app, element } = await setup();
+    element('booking-success-location').textContent = 'Salon, A; B\\C\nDESCRIPTION:injected';
+    app.setBookingCalendarLink({ date: '2026-12-01', start: '10:00', end: '10:30', location: 'Debrecen' });
+    const event = await (await fetch(element('booking-success-calendar').href)).text();
+    assert.ok(event.includes('LOCATION:Salon\\, A\\; B\\\\C\\nDESCRIPTION:injected\r\n'));
+    assert.equal(event.includes('\r\nDESCRIPTION:'), false);
+    assert.ok(event.split('\r\n').every(line => Buffer.byteLength(line) <= 75));
+    URL.revokeObjectURL(element('booking-success-calendar').href);
 });
